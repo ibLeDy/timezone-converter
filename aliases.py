@@ -1,6 +1,6 @@
 """Pytz timezones."""
 
-alias = {
+timezones = {
     'abidjan': 'Africa/Abidjan',
     'accra': 'Africa/Accra',
     'addis_ababa': 'Africa/Addis_Ababa',

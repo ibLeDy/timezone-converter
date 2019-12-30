@@ -9,7 +9,7 @@ import sys
 
 import pytz
 
-from timezones import alias
+from aliases import timezones
 
 
 def get_date():
@@ -61,7 +61,7 @@ def print_list_complete(local, foreign, length):
 
 try:
     city = sys.argv[1].lower()
-    tz = alias[city]
+    tz = timezones[city]
 except IndexError:
     print("Error: City not provided")
 except KeyError:
