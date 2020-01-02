@@ -83,7 +83,7 @@ else:
     print_list_complete(local, foreign, length)
 
     # Print simplified table with only hours
-    print_list(local, foreign, len(city))
+    # print_list(local, foreign, len(city))
 
 
 # TODO: option to display date (2019-12-30 00:00:00, 2019-12-29 18:00:00)
