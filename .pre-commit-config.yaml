@@ -12,7 +12,6 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
     -   id: debug-statements
-    -   id: detect-aws-credentials
     -   id: detect-private-key
     -   id: mixed-line-ending
     -   id: name-tests-test
