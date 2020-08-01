@@ -21,6 +21,10 @@ repos:
     -   id: name-tests-test
     -   id: requirements-txt-fixer
     -   id: trailing-whitespace
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v2.3.5
+    hooks:
+    -   id: reorder-python-imports
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
     rev: v1.1.0
     hooks:
@@ -33,7 +37,7 @@ repos:
     rev: 19.10b0
     hooks:
     -   id: black
-        args: [--skip-string-normalization]
+        args: [--skip-string-normalization, --line-length=79]
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.2
     hooks:
