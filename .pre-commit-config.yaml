@@ -1,9 +1,7 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.4.0
+    rev: v3.1.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
     -   id: check-added-large-files
     -   id: check-ast
     -   id: check-case-conflict
@@ -11,30 +9,36 @@ repos:
     -   id: check-executables-have-shebangs
     -   id: check-merge-conflict
     -   id: check-symlinks
+    -   id: check-json
+    -   id: check-toml
+    -   id: check-xml
+    -   id: check-yaml
     -   id: debug-statements
     -   id: detect-private-key
+    -   id: double-quote-string-fixer
+    -   id: end-of-file-fixer
     -   id: mixed-line-ending
     -   id: name-tests-test
-    -   id: check-json
-    -   id: flake8
-        args: ["--count", "--ignore=E501,F401", --exclude=.venv", "--statistics"]
-
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.761
-    hooks:
-    -   id: mypy
-
--   repo: git://github.com/Lucas-C/pre-commit-hooks-markup
-    rev: v1.0.0
-    hooks:
-    -   id: rst-linter
-
--   repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 1.11.2
-    hooks:
-      - id: markdownlint
-
+    -   id: requirements-txt-fixer
+    -   id: trailing-whitespace
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
     rev: v1.1.0
     hooks:
     -   id: python-safety-dependencies-check
+-   repo: https://github.com/markdownlint/markdownlint
+    rev: v0.9.0
+    hooks:
+    -   id: markdownlint
+-   repo: https://github.com/psf/black
+    rev: 19.10b0
+    hooks:
+    -   id: black
+        args: [--skip-string-normalization]
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.2
+    hooks:
+    -   id: flake8
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.770
+    hooks:
+    -   id: mypy
