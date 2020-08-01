@@ -21,20 +21,20 @@ def get_date():
 
 def humanify(local, foreign):
     local_splitted = str(local).split(' ')
-    local_date = "-".join(local_splitted[0].split('-'))
-    local_time = ":".join(local_splitted[1].split(':')[:2])
-    local_string = " ".join([local_date, local_time])
+    local_date = '-'.join(local_splitted[0].split('-'))
+    local_time = ':'.join(local_splitted[1].split(':')[:2])
+    local_string = ' '.join([local_date, local_time])
 
     foreign_splitted = str(foreign).split(' ')
-    foreign_date = "-".join(foreign_splitted[0].split('-'))
-    foreign_time = ":".join(foreign_splitted[1].split(':')[:2])
-    foreign_string = " ".join([foreign_date, foreign_time])
+    foreign_date = '-'.join(foreign_splitted[0].split('-'))
+    foreign_time = ':'.join(foreign_splitted[1].split(':')[:2])
+    foreign_string = ' '.join([foreign_date, foreign_time])
 
     return local_string, foreign_string
 
 
 def print_list(local, foreign, length):
-    print("LOCAL".center(length), city.upper().center(length))
+    print('LOCAL'.center(length), city.upper().center(length))
 
     for i in range(24):
         local_plus = local + datetime.timedelta(hours=i)
@@ -48,7 +48,7 @@ def print_list(local, foreign, length):
 
 
 def print_list_complete(local, foreign, length):
-    print("LOCAL".center(length), city.upper().center(length))
+    print('LOCAL'.center(length), city.upper().center(length))
 
     for i in range(24):
         local_plus = local + datetime.timedelta(hours=i)
@@ -63,9 +63,9 @@ try:
     city = sys.argv[1].lower()
     tz = timezones[city]
 except IndexError:
-    print("Error: City not provided")
+    print('Error: City not provided')
 except KeyError:
-    print("Error: City not found")
+    print('Error: City not found')
 else:
     # Get current date and time
     year, month, day = get_date()

@@ -2,7 +2,7 @@
 
 ## Example
 
-> python3 main.py tijuana
+> python3 timezone_converter.py tijuana
 
 ```pycon
        LOCAL              TIJUANA
