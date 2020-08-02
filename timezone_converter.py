@@ -23,8 +23,7 @@ if __name__ == '__main__':
         description='Compare your local timezone with a foreign one'
     )
     parser.add_argument(
-        'timezone',
-        help='foreign timezone that gets compared with your local one',
+        'timezone', help='foreign timezone that gets compared with your local one'
     )
 
     args = parser.parse_args()
@@ -36,8 +35,6 @@ if __name__ == '__main__':
         raise Exception(f'{args.timezone !r} is not an available timezone')
 
     today = datetime.datetime.now()
-    local_midnight = datetime.datetime(
-        today.year, today.month, today.day
-    ).astimezone()
+    local_midnight = datetime.datetime(today.year, today.month, today.day).astimezone()
     foreign_midnight = local_midnight.astimezone(pytz.timezone(timezone))
     display_timezones(local_midnight, foreign_midnight, args.timezone)
