@@ -31,7 +31,7 @@ if __name__ == '__main__':
     timezones = {tz.lower().split('/')[-1]: tz for tz in pytz.all_timezones}
 
     try:
-        timezone = timezones[args.timezone]
+        timezone = timezones[args.timezone.lower()]
     except KeyError:
         raise Exception(f'{args.timezone !r} is not an available timezone')
 
