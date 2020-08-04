@@ -1,35 +1,66 @@
 # Timezone Converter
 
-Compare your local timezone with a foreign one. A full day.
+Compare a full day of your local timezone with a foreign one.
 
-## Example
+`$ python3 timezone_comparison.py tijuana`
+
+<img src="https://git.io/JJKG6" alt="comparison between two timezones">
+
+## Contents
+
+- [Motivation](#motivation)
+- [Getting started](#getting-started)
+- [Available timezones](#available-timezones)
+- [License](#license)
+
+## Motivation
+
+When working with people that are not in your local timezone, the available
+resources are the usual webpages that only show _one_ hour at a time, which
+is pretty inconvenient.
+
+With this script you can quickly compare a full day of your timezone against
+a foreign one.
+
+## Getting started
+
+Clone the repo
 
 ```bash
-$ python3 timezone_converter.py tijuana
-
-       LOCAL              TIJUANA
-  2020-08-02 00:00    2020-08-01 15:00
-  2020-08-02 01:00    2020-08-01 16:00
-  2020-08-02 02:00    2020-08-01 17:00
-  2020-08-02 03:00    2020-08-01 18:00
-  2020-08-02 04:00    2020-08-01 19:00
-  2020-08-02 05:00    2020-08-01 20:00
-  2020-08-02 06:00    2020-08-01 21:00
-  2020-08-02 07:00    2020-08-01 22:00
-  2020-08-02 08:00    2020-08-01 23:00
-  2020-08-02 09:00    2020-08-02 00:00
-  2020-08-02 10:00    2020-08-02 01:00
-  2020-08-02 11:00    2020-08-02 02:00
-  2020-08-02 12:00    2020-08-02 03:00
-  2020-08-02 13:00    2020-08-02 04:00
-  2020-08-02 14:00    2020-08-02 05:00
-  2020-08-02 15:00    2020-08-02 06:00
-  2020-08-02 16:00    2020-08-02 07:00
-  2020-08-02 17:00    2020-08-02 08:00
-  2020-08-02 18:00    2020-08-02 09:00
-  2020-08-02 19:00    2020-08-02 10:00
-  2020-08-02 20:00    2020-08-02 11:00
-  2020-08-02 21:00    2020-08-02 12:00
-  2020-08-02 22:00    2020-08-02 13:00
-  2020-08-02 23:00    2020-08-02 14:00
+git clone https://github.com/ibLeDy/timezone-converter.git
+cd timezone-converter
 ```
+
+Create a new virtual enviroment and activate it
+
+```bash
+python3 -m virtualenv .venv
+source .venv/bin/activate
+```
+
+Install the requirements
+
+```bash
+pip install -r requirements.txt
+```
+
+Run the script
+
+```bash
+python3 timezone_converter.py <timezone>
+```
+
+## Available timezones
+
+You can use the argument `-l` or `--list` which will output all the available
+timezones.
+
+`$ python3 timezone_converter.py --list`
+
+<center><img src="https://git.io/JJKGo" alt="available timezones"></center>
+
+## License
+
+This project is licensed under the terms of the [MIT] license.
+
+[MIT]: https://choosealicense.com/licenses/mit/
