@@ -74,7 +74,7 @@ class TimezonesList(Helper):
     def _sort_and_group(self):
         pairs = [(k, v) for k, v in self.timezone_translations.items()]
         sorted_timezones = dict(sorted([pair for pair in pairs if pair[0]]))
-        biggest_name = max({len(k) for k in sorted_timezones})
+        biggest_name = len(max(sorted_timezones, key=lambda x: len(x)))
         timezone_groups = {letter: [] for letter in ascii_lowercase}
         for k in sorted_timezones:
             timezone_groups[k[0]].append(k.center(biggest_name))
