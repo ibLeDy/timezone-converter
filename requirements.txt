@@ -1,2 +1,7 @@
+colorama==0.4.3
+commonmark==0.9.1
+pprintpp==0.4.0
+Pygments==2.6.1
 pytz==2020.1
 rich==5.0.0
+typing-extensions==3.7.4.2
