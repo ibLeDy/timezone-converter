@@ -1,7 +1,7 @@
 import argparse
+from collections import defaultdict
 from datetime import datetime
 from datetime import timedelta
-from string import ascii_lowercase
 
 import pytz
 from rich.columns import Columns
@@ -74,10 +74,10 @@ class TimezonesList(Helper):
     def _sort_and_group(self):
         pairs = [(k, v) for k, v in self.timezone_translations.items()]
         sorted_timezones = dict(sorted([pair for pair in pairs if pair[0]]))
-        biggest_name = len(max(sorted_timezones, key=lambda x: len(x)))
-        timezone_groups = {letter: [] for letter in ascii_lowercase}
-        for k in sorted_timezones:
-            timezone_groups[k[0]].append(k.center(biggest_name))
+        longest_name = len(max(sorted_timezones, key=lambda x: len(x)))
+        timezone_groups = defaultdict(list)
+        for tz_name in sorted_timezones:
+            timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
 
         return timezone_groups
 
