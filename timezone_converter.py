@@ -72,8 +72,7 @@ class TimezonesComparison(Helper):
 
 class TimezonesList(Helper):
     def _sort_and_group(self):
-        pairs = [(k, v) for k, v in self.timezone_translations.items()]
-        sorted_timezones = dict(sorted([pair for pair in pairs if pair[0]]))
+        sorted_timezones = dict(sorted(self.timezone_translations.items()))
         longest_name = len(max(sorted_timezones, key=lambda x: len(x)))
         timezone_groups = defaultdict(list)
         for tz_name in sorted_timezones:
