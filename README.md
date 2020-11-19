@@ -6,7 +6,7 @@ Compare a full day of your local timezone with a foreign one.
 
 <img src="https://git.io/JJKG6" alt="comparison between two timezones">
 
-## Contents
+## Table of Contents
 
 - [Motivation](#motivation)
 - [Getting started](#getting-started)
@@ -62,5 +62,9 @@ timezones.
 ## License
 
 This project is licensed under the terms of the [MIT] license.
+
+<div align="right">
+  <b><a href="#timezone-converter">↥ back to top</a></b>
+</div>
 
 [MIT]: https://choosealicense.com/licenses/mit/
