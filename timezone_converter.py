@@ -1,3 +1,4 @@
+"""Compare your local timezone with a foreign one"""
 import argparse
 from collections import defaultdict
 from datetime import datetime
@@ -11,7 +12,7 @@ from rich.table import Table
 
 
 __version__ = '0.1.1'
-__doc__ = """Compare your local timezone with a foreign one"""
+# __doc__ = """Compare your local timezone with a foreign one"""
 
 
 class Helper:
@@ -29,7 +30,9 @@ class TimezonesComparison(Helper):
         self.timezone_name = self._get_timezone_name(self.timezone)
         self.current_dt = datetime.now()
         self.local_midnight = datetime(
-            self.current_dt.year, self.current_dt.month, self.current_dt.day,
+            self.current_dt.year,
+            self.current_dt.month,
+            self.current_dt.day,
         ).astimezone()
         self.foreign_midnight = self.local_midnight.astimezone(
             pytz.timezone(self.timezone_name)
@@ -99,7 +102,10 @@ def main():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
-        '-l', '--list', action='store_true', help='show available timezones',
+        '-l',
+        '--list',
+        action='store_true',
+        help='show available timezones',
     )
     parser.add_argument(
         '-V',
@@ -115,12 +121,14 @@ def main():
         help='append corresponding zone name to each column',
     )
     parser.add_argument(
-        'timezone', nargs='?', help='foreign timezone that gets compared',
+        'timezone',
+        nargs='?',
+        help='foreign timezone that gets compared',
     )
 
     args = parser.parse_args()
     if args.list:
-        TimezonesList().print_columns()
+        TimezonesList().print_columns()  # TODO: classmethod
     elif args.timezone is not None:
         TimezonesComparison(args.timezone, args.zone).print_table()
     else:
