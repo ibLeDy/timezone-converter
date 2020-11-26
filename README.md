@@ -4,7 +4,7 @@ Compare your local timezone with a foreign one.
 
 `$ timezone-comparison tijuana`
 
-<img src="https://git.io/JJKG6" alt="comparison between two timezones">
+![comparison between two timezones](https://git.io/JJKG6)
 
 ## Table of Contents
 
@@ -40,7 +40,7 @@ timezone-converter {timezone}
 
 `$ timezone-converter --list`
 
-<center><img src="https://git.io/JJKGo" alt="available timezones"></center>
+![list of available timezones](https://git.io/JJKGo)
 
 ## License
 
