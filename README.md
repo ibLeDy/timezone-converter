@@ -1,15 +1,15 @@
 # Timezone Converter
 
-Compare a full day of your local timezone with a foreign one.
+Compare your local timezone with a foreign one.
 
-`$ python3 timezone_comparison.py tijuana`
+`$ timezone-comparison tijuana`
 
 <img src="https://git.io/JJKG6" alt="comparison between two timezones">
 
 ## Table of Contents
 
 - [Motivation](#motivation)
-- [Getting started](#getting-started)
+- [Quickstart](#quickstart)
 - [Available timezones](#available-timezones)
 - [License](#license)
 
@@ -22,40 +22,23 @@ is pretty inconvenient.
 With this script you can quickly compare a full day of your timezone against
 a foreign one.
 
-## Getting started
+## Quickstart
 
-Clone the repo
+Install with pip
 
 ```bash
-git clone https://github.com/ibLeDy/timezone-converter.git
-cd timezone-converter
+pip install timezone-comparison
 ```
 
-Create a new virtual enviroment and activate it
+Run
 
 ```bash
-python3 -m virtualenv .venv
-source .venv/bin/activate
-```
-
-Install the requirements
-
-```bash
-pip install -r requirements.txt
-```
-
-Run the script
-
-```bash
-python3 timezone_converter.py <timezone>
+timezone-converter {timezone}
 ```
 
 ## Available timezones
 
-You can use the argument `-l` or `--list` which will output all the available
-timezones.
-
-`$ python3 timezone_converter.py --list`
+`$ timezone-converter --list`
 
 <center><img src="https://git.io/JJKGo" alt="available timezones"></center>
 
