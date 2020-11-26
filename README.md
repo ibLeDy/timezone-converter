@@ -2,7 +2,7 @@
 
 Compare your local timezone with a foreign one.
 
-`$ timezone-comparison tijuana`
+`$ timezone-converter tijuana`
 
 ![comparison between two timezones](https://git.io/JJKG6)
 
@@ -27,7 +27,7 @@ a foreign one.
 Install with pip
 
 ```bash
-pip install timezone-comparison
+pip install timezone-converter
 ```
 
 Run
