@@ -44,10 +44,9 @@ timezone-converter {timezone}
 
 ## License
 
-This project is licensed under the terms of the [MIT] license.
+This project is licensed under the terms of the
+[MIT](https://choosealicense.com/licenses/mit/) license.
 
 <div align="right">
   <b><a href="#timezone-converter">↥ back to top</a></b>
 </div>
-
-[MIT]: https://choosealicense.com/licenses/mit/
