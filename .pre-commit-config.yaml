@@ -33,7 +33,7 @@ repos:
     rev: v0.11.0
     hooks:
     -   id: markdownlint
-        args: [--rules=~MD033]
+        args: ["--rules=~MD033,~MD002,~MD013"]
 -   repo: https://github.com/psf/black
     rev: 20.8b1
     hooks:
