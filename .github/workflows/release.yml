@@ -24,6 +24,9 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
+          body: |
+            - Install or upgrade via pip: `pip install -U timezone-converter`
+            - Visit the project on PyPi: https://pypi.org/project/timezone-converter/
           draft: false
           prerelease: false
 
