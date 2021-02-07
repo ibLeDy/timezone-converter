@@ -1,27 +1,14 @@
-from collections import defaultdict
 from datetime import datetime
 from datetime import timedelta
-from typing import DefaultDict
-from typing import List
 from typing import Tuple
-from typing import Union
 
 import pytz
-from rich.columns import Columns
-from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
 
-
-class Helper:
-    timezone_translations = {tz.lower().split('/')[-1]: tz for tz in pytz.all_timezones}
-
-    @staticmethod
-    def _print_with_rich(rich_object: Union[Columns, Table]) -> None:
-        Console().print(rich_object)
+from timezone_converter.helper import Helper
 
 
-class TimezonesComparison(Helper):
+class ComparisonView(Helper):
     def __init__(self, timezone: str, zone: bool) -> None:
         self.timezone = timezone
         self.zone = zone
@@ -69,27 +56,3 @@ class TimezonesComparison(Helper):
 
     def print_table(self) -> None:
         self._print_with_rich(self._build_table())
-
-
-class TimezonesList(Helper):
-    def _sort_and_group(self) -> DefaultDict[str, List[str]]:
-        sorted_timezones = dict(sorted(self.timezone_translations.items()))
-        longest_name = len(max(sorted_timezones, key=lambda x: len(x)))
-        timezone_groups = defaultdict(list)
-        for tz_name in sorted_timezones:
-            timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
-
-        return timezone_groups
-
-    def _build_columns(self) -> Columns:
-        timezone_groups = self._sort_and_group()
-        panels = [
-            Panel('\n'.join(timezone_groups[group]), title=group.upper())
-            for group in timezone_groups
-            if timezone_groups[group]
-        ]
-
-        return Columns(panels, expand=True)
-
-    def print_columns(self) -> None:
-        self._print_with_rich(self._build_columns())

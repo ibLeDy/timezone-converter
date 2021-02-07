@@ -1,8 +1,8 @@
 import argparse
 
-from timezone_converter.classes import TimezonesComparison
-from timezone_converter.classes import TimezonesList
+from timezone_converter.comparison import ComparisonView
 from timezone_converter.constants import VERSION
+from timezone_converter.list import ListView
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,8 +42,8 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
     if args.list:
-        TimezonesList().print_columns()
+        ListView().print_columns()
     elif args.timezone is not None:
-        TimezonesComparison(args.timezone, args.zone).print_table()
+        ComparisonView(args.timezone, args.zone).print_table()
     else:
         parser.print_help()
