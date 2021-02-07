@@ -3,6 +3,8 @@ __pycache__
 .vscode
 .mypy_cache
 .pytest_cache
-test
-*.egg-info
 .tox
+*.egg-info
+build
+dist
+test
