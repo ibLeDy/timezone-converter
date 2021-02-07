@@ -1,15 +1,46 @@
-# Timezone Converter
+<div align="center">
+  <h1>Timezone Converter</h1>
+  <h4>Compare a full day of your local timezone with a foreign one</h4>
+  <br>
+  <p>
+    <a href="https://github.com/ibLeDy/timezone-converter/actions?query=workflow%3Aci">
+        <img alt="ci status" src="https://github.com/ibLeDy/timezone-converter/workflows/ci/badge.svg" />
+    </a>
+    <a href="https://github.com/ibLeDy/timezone-converter/blob/master/LICENSE">
+        <img alt="license" src="https://img.shields.io/pypi/l/timezone-converter" />
+    </a>
+    <a href="https://pypi.org/project/timezone-converter/">
+        <img alt="python version" src="https://img.shields.io/pypi/pyversions/timezone-converter" />
+    </a>
+    <a href="https://pypi.org/project/timezone-converter/">
+        <img alt="latest release" src="https://img.shields.io/pypi/v/timezone-converter?color=blue" />
+    </a>
+    <a href="https://pepy.tech/project/timezone-converter">
+        <img alt="overall downloads per month" src="https://pepy.tech/badge/timezone-converter/month" />
+    </a>
+  </p>
+</div>
 
-Compare your local timezone with a foreign one.
+<div align="center">
+  <table>
+    <tr>
+      <th style="text-align: center;"><code>$ timezone-converter tijuana</code></th>
+      <th style="text-align: center;"><code>$ timezone-converter tijuana --zone</code></th>
+    </tr>
+    <tr>
+      <td><img alt="comparison between two timezones" src="https://git.io/JtaZx" /></td>
+      <td><img alt="comparison between two timezones" src="https://git.io/JtaZj" /></td>
+    </tr>
+  </table>
+</div>
 
-`$ timezone-converter tijuana`
-
-![comparison between two timezones](https://git.io/JJKG6)
+---
 
 ## Table of Contents
 
 - [Motivation](#motivation)
-- [Quickstart](#quickstart)
+- [Installation](#installation)
+- [Usage](#usage)
 - [Available timezones](#available-timezones)
 - [License](#license)
 
@@ -22,18 +53,16 @@ is pretty inconvenient.
 With this script you can quickly compare a full day of your timezone against
 a foreign one.
 
-## Quickstart
-
-Install with pip
+## Installation
 
 ```bash
 pip install timezone-converter
 ```
 
-Run
+## Usage
 
 ```bash
-timezone-converter {timezone}
+timezone-converter <timezone>
 ```
 
 ## Available timezones
