@@ -13,7 +13,6 @@ jobs:
 
   macos:
     runs-on: macos-latest
-    if: startsWith(runner.os, 'macOS')
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
@@ -41,7 +40,6 @@ jobs:
 
   linux:
     runs-on: ubuntu-latest
-    if: startsWith(runner.os, 'Linux')
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
@@ -69,7 +67,6 @@ jobs:
 
   windows:
     runs-on: windows-latest
-    if: startsWith(runner.os, 'Windows')
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
