@@ -56,7 +56,7 @@ a foreign one.
 ## Installation
 
 ```bash
-pip install timezone-converter
+pip install -U timezone-converter
 ```
 
 ## Usage
