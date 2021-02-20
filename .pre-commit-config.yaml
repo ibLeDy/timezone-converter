@@ -29,11 +29,6 @@ repos:
     rev: v1.2.1
     hooks:
     -   id: python-safety-dependencies-check
--   repo: https://github.com/markdownlint/markdownlint
-    rev: v0.11.0
-    hooks:
-    -   id: markdownlint
-        args: ["--rules=~MD033,~MD002,~MD013"]
 -   repo: https://github.com/psf/black
     rev: 20.8b1
     hooks:
