@@ -1,8 +1,8 @@
 import argparse
 
-from timezone_converter.comparison import ComparisonView
+from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.constants import VERSION
-from timezone_converter.list import ListView
+from timezone_converter.list_view import ListView
 
 
 def build_parser() -> argparse.ArgumentParser:
