@@ -20,7 +20,7 @@ class ComparisonView(Helper):
             self.current_dt.day,
         ).astimezone()
         self.foreign_midnight = self.local_midnight.astimezone(
-            pytz.timezone(self.timezone_name)
+            pytz.timezone(self.timezone_name),
         )
 
     def _get_timezone_name(self, timezone: str) -> str:

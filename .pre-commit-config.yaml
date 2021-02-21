@@ -9,14 +9,18 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-merge-conflict
       - id: check-symlinks
+      - id: check-vcs-permalinks
       - id: check-json
       - id: check-toml
       - id: check-xml
       - id: check-yaml
       - id: debug-statements
+      - id: destroyed-symlinks
       - id: detect-private-key
       - id: double-quote-string-fixer
       - id: end-of-file-fixer
+      - id: fix-encoding-pragma
+        args: [--remove]
       - id: mixed-line-ending
       - id: name-tests-test
       - id: requirements-txt-fixer
@@ -25,6 +29,15 @@ repos:
     rev: v2.4.0
     hooks:
       - id: reorder-python-imports
+  - repo: https://github.com/asottile/add-trailing-comma
+    rev: v2.0.1
+    hooks:
+      - id: add-trailing-comma
+        args: [--py36-plus]
+  - repo: https://github.com/asottile/setup-cfg-fmt
+    rev: v1.11.0
+    hooks:
+      - id: setup-cfg-fmt
   - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
     rev: v1.2.1
     hooks:
