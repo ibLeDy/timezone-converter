@@ -12,9 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
+      - uses: actions/checkout@v2
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -46,6 +44,7 @@ jobs:
         pip install
         build
         --user
+
     - name: Build a binary wheel and a source tarball
       run: >-
         python -m
