@@ -54,5 +54,6 @@ class ComparisonView(Helper):
 
         return table
 
-    def print_table(self) -> None:
+    def print_table(self) -> int:
         self._print_with_rich(self._build_table())
+        return 0

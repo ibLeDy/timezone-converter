@@ -38,12 +38,18 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main() -> int:
+    returncode = 0
     parser = build_parser()
     args = parser.parse_args()
     if args.list:
-        ListView().print_columns()
+        returncode = ListView().print_columns()
     elif args.timezone is not None:
-        ComparisonView(args.timezone, args.zone).print_table()
+        returncode = ComparisonView(args.timezone, args.zone).print_table()
     else:
         parser.print_help()
+    return returncode
+
+
+if __name__ == '__main__':
+    exit(main())

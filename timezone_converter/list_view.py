@@ -28,5 +28,6 @@ class ListView(Helper):
 
         return Columns(panels, expand=True)
 
-    def print_columns(self) -> None:
+    def print_columns(self) -> int:
         self._print_with_rich(self._build_columns())
+        return 0
