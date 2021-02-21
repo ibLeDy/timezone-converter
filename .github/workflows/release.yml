@@ -50,11 +50,6 @@ jobs:
     - name: Save build artifacts name in env variables
       run: echo wheel=$(ls dist | head -1) >> $GITHUB_ENV; echo tarball=$(ls dist | tail -1) >> $GITHUB_ENV; cat $GITHUB_ENV
 
-    - name: Publish distribution 📦
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
-
     - name: Upload binary wheel as Release Asset
       id: upload_binary_wheel_asset
       uses: actions/upload-release-asset@v1
@@ -62,7 +57,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/${wheel}
+        asset_path: dist/"${wheel}"
         asset_name: "${wheel}"
         asset_content_type: application/zip
 
@@ -73,6 +68,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/${tarball}
+        asset_path: dist/"${tarball}"
         asset_name: "${tarball}"
         asset_content_type: application/gzip
+
+    - name: Publish distribution 📦
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
