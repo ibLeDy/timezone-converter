@@ -22,7 +22,7 @@ jobs:
           release_name: ${{ github.ref }}
           body: |
             - Install or upgrade via pip: `pip install -U timezone-converter`
-            - Visit the project on PyPi: https://pypi.org/project/timezone-converter/
+            - Visit the project on PyPi: https://pypi.org/project/timezone-converter
           draft: false
           prerelease: false
 
@@ -52,7 +52,32 @@ jobs:
         --outdir dist/
         .
 
+    - name: Save build artifacts name in env variables
+      run: echo wheel=$(ls dist | head -1) >> $GITHUB_ENV; echo tarball=$(ls dist | tail -1) >> $GITHUB_ENV; cat $GITHUB_ENV
+
     - name: Publish distribution 📦
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
+
+    - name: Upload binary wheel as Release Asset
+      id: upload_release_asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./"$wheel"
+        asset_name: "$wheel"
+        asset_content_type: application/zip
+
+    - name: Upload source tarball as Release Asset
+      id: upload_release_asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./"$tarball"
+        asset_name: "$tarball"
+        asset_content_type: application/gzip
