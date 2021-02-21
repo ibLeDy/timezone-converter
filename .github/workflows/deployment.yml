@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  release-and-publish:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:

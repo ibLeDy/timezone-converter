@@ -3,20 +3,23 @@
   <h4>Compare a full day of your local timezone with a foreign one</h4>
   <br>
   <p>
-    <a href="https://github.com/ibLeDy/timezone-converter/actions?query=workflow%3Aci">
-        <img alt="ci status" src="https://github.com/ibLeDy/timezone-converter/workflows/ci/badge.svg" />
+    <a href="https://github.com/ibLeDy/timezone-converter/actions/workflows/integration.yml">
+        <img alt="integration status" src="https://github.com/ibLeDy/timezone-converter/actions/workflows/integration.yml/badge.svg" />
+    </a>
+    <a href="https://github.com/ibLeDy/timezone-converter/actions/workflows/deployment.yml">
+        <img alt="deployment status" src="https://github.com/ibLeDy/timezone-converter/actions/workflows/deployment.yml/badge.svg" />
     </a>
     <a href="https://github.com/ibLeDy/timezone-converter/blob/master/LICENSE">
         <img alt="license" src="https://img.shields.io/pypi/l/timezone-converter" />
+    </a>
+    <a href="https://pepy.tech/project/timezone-converter">
+        <img alt="overall downloads per month" src="https://pepy.tech/badge/timezone-converter/month" />
     </a>
     <a href="https://pypi.org/project/timezone-converter/">
         <img alt="python version" src="https://img.shields.io/pypi/pyversions/timezone-converter" />
     </a>
     <a href="https://pypi.org/project/timezone-converter/">
         <img alt="latest release" src="https://img.shields.io/pypi/v/timezone-converter?color=blue" />
-    </a>
-    <a href="https://pepy.tech/project/timezone-converter">
-        <img alt="overall downloads per month" src="https://pepy.tech/badge/timezone-converter/month" />
     </a>
   </p>
 </div>
