@@ -8,7 +8,6 @@ on:
 jobs:
 
   release:
-    name: Create Release
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +27,6 @@ jobs:
           prerelease: false
 
   publish:
-    name: Publish to PyPI
     runs-on: ubuntu-latest
 
     steps:
