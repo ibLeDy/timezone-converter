@@ -57,8 +57,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/"${wheel}"
-        asset_name: "${wheel}"
+        asset_path: dist/${{ env.wheel }}
+        asset_name: ${{ env.wheel }}
         asset_content_type: application/zip
 
     - name: Upload source tarball as Release Asset
@@ -68,8 +68,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/"${tarball}"
-        asset_name: "${tarball}"
+        asset_path: dist/${{ env.tarball }}
+        asset_name: ${{ env.tarball }}
         asset_content_type: application/gzip
 
     - name: Publish distribution 📦
