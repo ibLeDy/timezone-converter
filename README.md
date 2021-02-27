@@ -12,14 +12,14 @@
     <a href="https://github.com/ibLeDy/timezone-converter/blob/master/LICENSE">
         <img alt="license" src="https://img.shields.io/pypi/l/timezone-converter" />
     </a>
-    <a href="https://pepy.tech/project/timezone-converter">
-        <img alt="overall downloads per month" src="https://pepy.tech/badge/timezone-converter/month" />
-    </a>
     <a href="https://pypi.org/project/timezone-converter/">
         <img alt="python version" src="https://img.shields.io/pypi/pyversions/timezone-converter" />
     </a>
     <a href="https://pypi.org/project/timezone-converter/">
         <img alt="latest release" src="https://img.shields.io/pypi/v/timezone-converter?color=blue" />
+    </a>
+    <a href="https://github.com/psf/black">
+        <img alt="code style" src="https://img.shields.io/badge/code%20style-black-000000.svg" />
     </a>
   </p>
 </div>
