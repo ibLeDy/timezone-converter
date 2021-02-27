@@ -48,6 +48,8 @@ def main() -> int:
         returncode = ComparisonView(args.timezone, args.zone).print_table()
     else:
         parser.print_help()
+    if returncode is None:
+        returncode = 1
     return returncode
 
 
