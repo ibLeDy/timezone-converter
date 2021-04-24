@@ -9,7 +9,7 @@
     <a href="https://github.com/ibLeDy/timezone-converter/actions/workflows/deployment.yml">
         <img alt="deployment status" src="https://github.com/ibLeDy/timezone-converter/actions/workflows/deployment.yml/badge.svg" />
     </a>
-    <a href="https://github.com/ibLeDy/timezone-converter/blob/master/LICENSE">
+    <a href="https://github.com/ibLeDy/timezone-converter/blob/main/LICENSE">
         <img alt="license" src="https://img.shields.io/pypi/l/timezone-converter" />
     </a>
     <a href="https://pypi.org/project/timezone-converter/">
