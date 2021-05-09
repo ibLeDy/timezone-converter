@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Timezone Converter</h1>
-  <h4>Compare a full day of your local timezone with a foreign one</h4>
+  <h3>Compare a full day of your local timezone with a foreign one</h3>
   <br>
   <p>
     <a href="https://github.com/ibLeDy/timezone-converter/actions/workflows/integration.yml">
