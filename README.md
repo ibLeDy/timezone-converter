@@ -12,9 +12,6 @@
     <a href="https://results.pre-commit.ci/latest/github/ibLeDy/timezone-converter/main">
         <img alt="pre-commit.ci status" src="https://results.pre-commit.ci/badge/github/ibLeDy/timezone-converter/main.svg" />
     </a>
-    <a href="https://github.com/ibLeDy/timezone-converter/blob/main/LICENSE">
-        <img alt="license" src="https://img.shields.io/pypi/l/timezone-converter" />
-    </a>
     <a href="https://pypi.org/project/timezone-converter/">
         <img alt="python version" src="https://img.shields.io/pypi/pyversions/timezone-converter" />
     </a>
