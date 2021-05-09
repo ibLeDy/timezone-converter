@@ -34,15 +34,36 @@ repos:
     hooks:
       - id: add-trailing-comma
         args: [--py36-plus]
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.9
+    hooks:
+      - id: remove-crlf
+      - id: remove-tabs
   - repo: https://github.com/asottile/setup-cfg-fmt
     rev: v1.17.0
     hooks:
       - id: setup-cfg-fmt
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.8.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-check-mock-methods
+      - id: python-no-eval
+      - id: python-no-log-warn
+      - id: python-use-type-annotations
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+      - id: text-unicode-replacement-char
   - repo: https://github.com/psf/black
     rev: 20.8b1
     hooks:
       - id: black
         args: [--skip-string-normalization]
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.2.3
+    hooks:
+      - id: yesqa
   - repo: https://github.com/pycqa/flake8
     rev: 3.9.1
     hooks:
