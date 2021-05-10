@@ -13,7 +13,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         'timezone',
-        nargs='?',
+        nargs='*',
         help='foreign timezone',
     )
     parser.add_argument(
@@ -44,7 +44,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.list:
         returncode = ListView().print_columns()
-    elif args.timezone is not None:
+    elif args.timezone:
         returncode = ComparisonView(args.timezone, args.zone).print_table()
     else:
         parser.print_help()

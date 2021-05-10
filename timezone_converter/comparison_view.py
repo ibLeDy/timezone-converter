@@ -1,6 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
-from typing import Tuple
+from typing import List
 
 import pytz
 from rich.table import Table
@@ -9,19 +9,24 @@ from timezone_converter.helper import Helper
 
 
 class ComparisonView(Helper):
-    def __init__(self, timezone: str, zone: bool) -> None:
-        self.timezone = timezone
+    def __init__(self, timezones: List[str], zone: bool) -> None:
         self.zone = zone
-        self.timezone_name = self._get_timezone_name(self.timezone)
-        self.current_dt = datetime.now()
-        self.local_midnight = datetime(
-            self.current_dt.year,
-            self.current_dt.month,
-            self.current_dt.day,
+
+        current_dt = datetime.now()
+        local_midnight = datetime(
+            current_dt.year,
+            current_dt.month,
+            current_dt.day,
         ).astimezone()
-        self.foreign_midnight = self.local_midnight.astimezone(
-            pytz.timezone(self.timezone_name),
-        )
+
+        self.midnights = [local_midnight]
+
+        for timezone in timezones:
+            timezone_name = self._get_timezone_name(timezone)
+            foreign_midnight = local_midnight.astimezone(
+                pytz.timezone(timezone_name),
+            )
+            self.midnights.append(foreign_midnight)
 
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
@@ -29,28 +34,34 @@ class ComparisonView(Helper):
             raise SystemExit(f'error: {timezone !r} is not an available timezone')
         return timezone_name
 
-    def _get_headers(self) -> Tuple[str, str]:
-        local_header = 'LOCAL'
-        foreign_header = str(self.foreign_midnight.tzinfo).upper()
+    def _get_headers(self) -> List[str]:
+        headers = []
+        for idx, midnight in enumerate(self.midnights):
+            if idx:
+                foreign_header = str(midnight.tzinfo).upper()
+            else:
+                foreign_header = 'LOCAL'
+            if self.zone:
+                headers.append(f'{foreign_header} ({midnight.tzname()})')
+            else:
+                headers.append(foreign_header)
 
-        if self.zone:
-            local_header += f' ({self.local_midnight.tzname()})'
-            foreign_header += f' ({self.foreign_midnight.tzname()})'
-
-        return local_header, foreign_header
+        return headers
 
     def _build_table(self) -> Table:
-        local_header, foreign_header = self._get_headers()
+        headers = self._get_headers()
         table = Table()
-        table.add_column(local_header, justify='center')
-        table.add_column(foreign_header, justify='center')
+        for header in headers:
+            table.add_column(header, justify='center')
 
         fmt = '%Y-%m-%d %H:%M'
         for hour in range(24):
-            table.add_row(
-                (self.local_midnight + timedelta(hours=hour)).strftime(fmt),
-                (self.foreign_midnight + timedelta(hours=hour)).strftime(fmt),
-            )
+            columns = [
+                (midnight + timedelta(hours=hour)).strftime(fmt)
+                for midnight in self.midnights
+            ]
+
+            table.add_row(*columns)
 
         return table
 
