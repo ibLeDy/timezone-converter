@@ -37,14 +37,12 @@ class ComparisonView(Helper):
     def _get_headers(self) -> List[str]:
         headers = []
         for idx, midnight in enumerate(self.midnights):
-            if idx:
-                foreign_header = str(midnight.tzinfo).upper()
-            else:
-                foreign_header = 'LOCAL'
+            header = str(midnight.tzinfo).upper() if idx else 'LOCAL'
+
             if self.zone:
-                headers.append(f'{foreign_header} ({midnight.tzname()})')
+                headers.append(f'{header} ({midnight.tzname()})')
             else:
-                headers.append(foreign_header)
+                headers.append(header)
 
         return headers
 
