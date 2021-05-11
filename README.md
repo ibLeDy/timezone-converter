@@ -65,7 +65,7 @@ pip install -U timezone-converter
 ## Usage
 
 ```bash
-timezones-converter <timezone> [<timezone> ...]
+timezone-converter <timezone> [<timezone> ...]
 ```
 
 ## Available timezones
