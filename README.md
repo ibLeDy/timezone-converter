@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Timezone Converter</h1>
-  <h3>Compare a full day of your local timezone with a foreign one</h3>
+  <h3>Compare a full day of your local timezone with foreign ones</h3>
   <br>
   <p>
     <a href="https://github.com/ibLeDy/timezone-converter/actions/workflows/integration.yml">
@@ -27,12 +27,12 @@
 <div align="center">
   <table>
     <tr>
-      <th style="text-align: center;"><code>$ timezone-converter tijuana</code></th>
       <th style="text-align: center;"><code>$ timezone-converter tijuana --zone</code></th>
+      <th style="text-align: center;"><code>$ timezone-converter tijuana new_york</code></th>
     </tr>
     <tr>
-      <td><img alt="comparison between two timezones" src="https://git.io/JtaZx" /></td>
       <td><img alt="comparison between two timezones" src="https://git.io/JtaZj" /></td>
+      <td><img alt="comparison between two timezones" src="https://git.io/JsJUv" /></td>
     </tr>
   </table>
 </div>
@@ -54,7 +54,7 @@ resources are the usual webpages that only show _one_ hour at a time, which
 is pretty inconvenient.
 
 With this script you can quickly compare a full day of your timezone against
-a foreign one.
+foreign ones.
 
 ## Installation
 
