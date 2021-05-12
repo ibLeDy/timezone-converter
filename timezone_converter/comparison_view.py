@@ -53,11 +53,21 @@ class ComparisonView(Helper):
             table.add_column(header, justify='center')
 
         fmt = '%Y-%m-%d %H:%M'
+
+        current_hour = datetime.now().hour
         for hour in range(24):
-            columns = [
-                (midnight + timedelta(hours=hour)).strftime(fmt)
-                for midnight in self.midnights
-            ]
+            if hour != current_hour:
+                columns = [
+                    (midnight + timedelta(hours=hour)).strftime(fmt)
+                    for midnight in self.midnights
+                ]
+            else:
+                columns = [
+                    '[red]'
+                    + (midnight + timedelta(hours=hour)).strftime(fmt)
+                    + '[/red]'
+                    for midnight in self.midnights
+                ]
 
             table.add_row(*columns)
 
