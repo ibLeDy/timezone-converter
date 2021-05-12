@@ -56,16 +56,13 @@ class ComparisonView(Helper):
 
         current_hour = datetime.now().hour
         for hour in range(24):
-            if hour != current_hour:
+            columns = [
+                (midnight + timedelta(hours=hour)).strftime(fmt)
+                for midnight in self.midnights
+            ]
+            if hour == current_hour:
                 columns = [
-                    (midnight + timedelta(hours=hour)).strftime(fmt)
-                    for midnight in self.midnights
-                ]
-            else:
-                columns = [
-                    '[red]'
-                    + (midnight + timedelta(hours=hour)).strftime(fmt)
-                    + '[/red]'
+                    f'[blue]{(midnight + timedelta(hours=hour)).strftime(fmt)}[/blue]'
                     for midnight in self.midnights
                 ]
 
