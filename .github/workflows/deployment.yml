@@ -1,78 +1,27 @@
 name: deployment
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [created]
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
+      - uses: actions/checkout@v2
 
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        name: ${{ github.ref }}
-        body: |
-          - Install or upgrade via pip: `pip install -U timezone-converter`
-          - Visit the project on PyPi: https://pypi.org/project/timezone-converter
-        draft: false
-        prerelease: false
+      - name: Set up Python
+        uses: actions/setup-python@v2
 
-    - name: Install pypa/build
-      run: >-
-        python -m
-        pip install
-        build
-        --user
+      - name: Install pypa/build
+        run: python -m pip install --upgrade pip build
 
-    - name: Build a binary wheel and a source tarball
-      run: >-
-        python -m
-        build
-        --sdist
-        --wheel
-        --outdir dist/
-        .
+      - name: Build a binary wheel and a source tarball
+        run: python -m build --sdist --wheel --outdir=dist/ .
 
-    - name: Save build artifacts name in env variables
-      run: echo wheel=$(ls dist | head -1) >> $GITHUB_ENV; echo tarball=$(ls dist | tail -1) >> $GITHUB_ENV; cat $GITHUB_ENV
-
-    - name: Upload binary wheel as Release Asset
-      id: upload_binary_wheel_asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/${{ env.wheel }}
-        asset_name: ${{ env.wheel }}
-        asset_content_type: application/zip
-
-    - name: Upload source tarball as Release Asset
-      id: upload_source_tarball_asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/${{ env.tarball }}
-        asset_name: ${{ env.tarball }}
-        asset_content_type: application/gzip
-
-    - name: Publish distribution 📦
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Publish distribution 📦
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
