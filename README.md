@@ -31,8 +31,8 @@
       <th style="text-align: center;"><code>$ timezone-converter tijuana new_york</code></th>
     </tr>
     <tr>
-      <td><img alt="comparison between two timezones" src="https://git.io/JtaZj" /></td>
-      <td><img alt="comparison between two timezones" src="https://git.io/JsJUv" /></td>
+      <td><img alt="comparison between two timezones" src="./.github/assets/tijuana_zone.svg" /></td>
+      <td><img alt="comparison between two timezones" src="./.github/assets/tijuana_new_york.svg" /></td>
     </tr>
   </table>
 </div>
