@@ -46,7 +46,7 @@ class ComparisonView(Helper):
 
         return headers
 
-    def _build_table(self) -> Table:
+    def _build_table(self, single_hour) -> Table:
         headers = self._get_headers()
         table = Table()
         for header in headers:
@@ -55,7 +55,14 @@ class ComparisonView(Helper):
         fmt = '%Y-%m-%d %H:%M'
 
         current_hour = datetime.now().hour
-        for hour in range(24):
+        if single_hour is None:
+            hour_range = range(24)
+        elif single_hour == 'now':
+            hour_range = range(current_hour, current_hour + 1)
+        else:
+            hour_range = range(int(single_hour), int(single_hour) + 1)
+
+        for hour in hour_range:
             columns = [
                 (midnight + timedelta(hours=hour)).strftime(fmt)
                 for midnight in self.midnights
@@ -70,6 +77,6 @@ class ComparisonView(Helper):
 
         return table
 
-    def print_table(self) -> int:
-        self._print_with_rich(self._build_table())
+    def print_table(self, single_hour) -> int:
+        self._print_with_rich(self._build_table(single_hour))
         return 0
