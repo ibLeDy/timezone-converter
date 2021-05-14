@@ -35,6 +35,12 @@ def build_parser() -> argparse.ArgumentParser:
         action='store_true',
         help='show corresponding zone name in each column',
     )
+    parser.add_argument(
+        '-s',
+        '--single',
+        action='store',
+        help='show a single hour',
+    )
     return parser
 
 
