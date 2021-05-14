@@ -51,8 +51,10 @@ def main() -> int:
     if args.list:
         returncode = ListView().print_columns()
     elif args.timezone:
-        returncode = ComparisonView(args.timezone,
-                                    args.zone).print_table(args.single)
+        returncode = ComparisonView(
+            args.timezone,
+            args.zone,
+        ).print_table(args.single)
     else:
         parser.print_help()
     if returncode is None:
