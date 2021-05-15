@@ -38,8 +38,7 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run tox
-        run: |
-          tox
+        run: tox
 
   macos:
     runs-on: macos-latest
@@ -69,8 +68,7 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run tox
-        run: |
-          tox
+        run: tox
 
   windows:
     runs-on: windows-latest
@@ -100,5 +98,4 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run tox
-        run: |
-          tox
+        run: tox
