@@ -39,14 +39,6 @@
 
 ---
 
-## Table of Contents
-
-- [Motivation](#motivation)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Available timezones](#available-timezones)
-- [License](#license)
-
 ## Motivation
 
 When working with people that are not in your local timezone, the available
