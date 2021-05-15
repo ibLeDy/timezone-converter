@@ -62,9 +62,12 @@ timezone-converter <timezone> [<timezone> ...]
 
 ## Available timezones
 
+Using the `--list` argument, you can see a pretty list of available timezones,
+by groups, and sorted alphabetically.
+
 `$ timezone-converter --list`
 
-![list of available timezones](https://git.io/JJKGo)
+![list of available timezones](https://raw.githubusercontent.com/ibLeDy/timezone-converter/main/.github/assets/list.svg)
 
 ## License
 
