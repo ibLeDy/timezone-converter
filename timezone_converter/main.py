@@ -11,9 +11,10 @@ def _single_hour(argument: str) -> int:
     if hour not in range(24):
         raise argparse.ArgumentError(
             None,
-            'Value for --single must be between 00 and 23'
+            'Value for --single must be between 00 and 23',
         )
     return hour
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -68,7 +69,7 @@ def main() -> int:
         returncode = ComparisonView(
             args.timezone,
             args.zone,
-            args.hour
+            args.hour,
         ).print_table()
     else:
         parser.print_help()
