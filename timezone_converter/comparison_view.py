@@ -11,7 +11,10 @@ from timezone_converter.helper import Helper
 
 class ComparisonView(Helper):
     def __init__(
-        self, timezones: List[str], zone: bool, hour: Union[int, None]
+        self,
+        timezones: List[str],
+        zone: bool,
+        hour: Union[int, None],
     ) -> None:
 
         self.zone = zone
