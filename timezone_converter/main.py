@@ -1,8 +1,19 @@
 import argparse
+from datetime import datetime
 
 from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.constants import VERSION
 from timezone_converter.list_view import ListView
+
+
+def _single_hour(argument: str) -> int:
+    hour = int(argument)
+    if hour not in range(24):
+        raise argparse.ArgumentError(
+            None,
+            'Value for --single must be between 00 and 23',
+        )
+    return hour
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,6 +46,16 @@ def build_parser() -> argparse.ArgumentParser:
         action='store_true',
         help='show corresponding zone name in each column',
     )
+    parser.add_argument(
+        '-s',
+        '--single',
+        nargs='?',
+        type=_single_hour,
+        const=datetime.now().hour,
+        metavar='HOUR',
+        dest='hour',
+        help='show a single hour',
+    )
     return parser
 
 
@@ -45,7 +66,11 @@ def main() -> int:
     if args.list:
         returncode = ListView().print_columns()
     elif args.timezone:
-        returncode = ComparisonView(args.timezone, args.zone).print_table()
+        returncode = ComparisonView(
+            args.timezone,
+            args.zone,
+            args.hour,
+        ).print_table()
     else:
         parser.print_help()
     if returncode is None:

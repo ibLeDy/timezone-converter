@@ -1,6 +1,7 @@
 from datetime import datetime
 from datetime import timedelta
 from typing import List
+from typing import Union
 
 import pytz
 from rich.table import Table
@@ -9,8 +10,15 @@ from timezone_converter.helper import Helper
 
 
 class ComparisonView(Helper):
-    def __init__(self, timezones: List[str], zone: bool) -> None:
+    def __init__(
+        self,
+        timezones: List[str],
+        zone: bool,
+        hour: Union[int, None],
+    ) -> None:
+
         self.zone = zone
+        self.hour = hour
 
         current_dt = datetime.now()
         local_midnight = datetime(
@@ -54,8 +62,12 @@ class ComparisonView(Helper):
 
         fmt = '%Y-%m-%d %H:%M'
 
+        hour_range = range(24)
+        if self.hour is not None:
+            hour_range = range(self.hour, self.hour + 1)
+
         current_hour = datetime.now().hour
-        for hour in range(24):
+        for hour in hour_range:
             columns = [
                 (midnight + timedelta(hours=hour)).strftime(fmt)
                 for midnight in self.midnights
