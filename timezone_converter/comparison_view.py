@@ -16,7 +16,6 @@ class ComparisonView(Helper):
         zone: bool,
         hour: Union[int, None],
     ) -> None:
-
         self.zone = zone
         self.hour = hour
 
@@ -60,12 +59,11 @@ class ComparisonView(Helper):
         for header in headers:
             table.add_column(header, justify='center')
 
-        fmt = '%Y-%m-%d %H:%M'
-
         hour_range = range(24)
         if self.hour is not None:
             hour_range = range(self.hour, self.hour + 1)
 
+        fmt = '%Y-%m-%d %H:%M'
         current_hour = datetime.now().hour
         for hour in hour_range:
             columns = [
