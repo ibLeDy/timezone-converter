@@ -9,11 +9,10 @@ from timezone_converter.helper import Helper
 
 
 class ComparisonView(Helper):
-    def __init__(self, timezones: List[str], zone: bool) -> None:
-
-        hour: Union[int, None]
+    def __init__(self, timezones: List[str], zone: bool, hour: Union[int, None]) -> None:
 
         self.zone = zone
+        self.hour = hour
 
         current_dt = datetime.now()
         local_midnight = datetime(
