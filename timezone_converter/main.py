@@ -5,6 +5,13 @@ from timezone_converter.constants import VERSION
 from timezone_converter.list_view import ListView
 
 
+def _single_hour(argument: str) -> int:
+    hour = int(argument)
+    if hour not in range(24):
+        raise argparse.ArgumentError(None, 'Value for --single must be between
+                                     00 and 23')
+    return hour
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog='timezone-converter',
@@ -38,7 +45,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-s',
         '--single',
-        action='store',
+        nargs='?',
+        type=_single_hour,
+        const=datetime.now().hour,
+        metavar='HOUR',
+        dest='hour',
         help='show a single hour',
     )
     return parser
