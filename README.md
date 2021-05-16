@@ -45,7 +45,7 @@ When working with people that are not in your local timezone, the available
 resources are the usual webpages that only show _one_ hour at a time, which
 is pretty inconvenient.
 
-With this script you can quickly compare a full day of your timezone against
+With this package you can quickly compare a full day of your timezone against
 foreign ones.
 
 ## Installation
@@ -60,7 +60,22 @@ pip install -U timezone-converter
 timezone-converter <timezone> [<timezone> ...]
 ```
 
-## Available timezones
+## Features
+
+### Comparison between multiple timezones
+
+Multiple timezones can be provided to get a side-by-side comparison.
+
+### Current hour highlighting
+
+The row containing the current hour will be highlighted.
+
+### Output a single hour
+
+Using the `--single` argument, you can output a single hour. If you don't
+provide a value, the current hour will be displayed.
+
+### List of available timezones
 
 Using the `--list` argument, you can see a pretty list of available timezones,
 by groups, and sorted alphabetically.
