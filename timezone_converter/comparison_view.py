@@ -43,7 +43,7 @@ class ComparisonView(Helper):
         return timezone_name
 
     def _get_headers(self) -> List[str]:
-        headers = []
+        headers: List[str] = []
         for idx, midnight in enumerate(self.midnights):
             header = str(midnight.tzinfo).upper() if idx else 'LOCAL'
 

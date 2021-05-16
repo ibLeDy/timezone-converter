@@ -12,7 +12,7 @@ class ListView(Helper):
     def _sort_and_group(self) -> DefaultDict[str, List[str]]:
         sorted_timezones = dict(sorted(self.timezone_translations.items()))
         longest_name = len(max(sorted_timezones, key=lambda x: len(x)))
-        timezone_groups = defaultdict(list)
+        timezone_groups: DefaultDict[str, List[str]] = defaultdict(list)
         for tz_name in sorted_timezones:
             timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
 
