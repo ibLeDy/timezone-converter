@@ -65,7 +65,7 @@ def main() -> int:
         returncode = ComparisonView(
             args.timezone,
             args.zone,
-        ).print_table(args.single)
+        ).print_table()
     else:
         parser.print_help()
     if returncode is None:

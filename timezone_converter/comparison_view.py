@@ -1,6 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
-from typing import List
+from typing import List, Union
 
 import pytz
 from rich.table import Table
@@ -10,6 +10,9 @@ from timezone_converter.helper import Helper
 
 class ComparisonView(Helper):
     def __init__(self, timezones: List[str], zone: bool) -> None:
+
+        hour: Union[int, None]
+
         self.zone = zone
 
         current_dt = datetime.now()
@@ -77,6 +80,6 @@ class ComparisonView(Helper):
 
         return table
 
-    def print_table(self, single_hour) -> int:
-        self._print_with_rich(self._build_table(single_hour))
+    def print_table(self) -> int:
+        self._print_with_rich(self._build_table())
         return 0
