@@ -30,8 +30,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-l',
         '--list',
-        action='store_true',
-        help='show all available timezones',
+        nargs='*',
+        type=_single_letter,
+        const='all',
+        metavar='LETTER',
+        help='show all available timezones or timezones beginning with
+        specified letter groups',
     )
     parser.add_argument(
         '-V',
