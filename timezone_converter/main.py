@@ -1,5 +1,6 @@
 import argparse
 from datetime import datetime
+from typing import List, Union
 
 from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.constants import VERSION
@@ -14,6 +15,18 @@ def _single_hour(argument: str) -> int:
             'Value for --single must be between 00 and 23',
         )
     return hour
+
+def _single_letter(argument: List[str]) -> List[str]:
+    if argument == 'all':
+        return ['all']
+    else:
+        argument = list(argument)
+        for letter in argument:
+            if letter.isalpha() is False:
+                raise argparse.ArgumentError(
+                    'Value for --list must be single letters or None'
+                )
+        return argument
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,12 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-l',
         '--list',
-        nargs='*',
+        nargs='?',
         type=_single_letter,
         const='all',
         metavar='LETTER',
-        help='show all available timezones or timezones beginning with
-        specified letter groups',
+        help='show all available timezones or timezones beginning with specified letter groups',
     )
     parser.add_argument(
         '-V',
@@ -68,7 +80,7 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     if args.list:
-        returncode = ListView().print_columns()
+        returncode = ListView(args.list).print_columns()
     elif args.timezone:
         returncode = ComparisonView(
             args.timezone,

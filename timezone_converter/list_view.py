@@ -9,12 +9,21 @@ from timezone_converter.helper import Helper
 
 
 class ListView(Helper):
+
+    def __init__(self, letters: List[str]) -> None:
+        self.letters = letters
+
     def _sort_and_group(self) -> DefaultDict[str, List[str]]:
         sorted_timezones = dict(sorted(self.timezone_translations.items()))
         longest_name = len(max(sorted_timezones, key=lambda x: len(x)))
         timezone_groups: DefaultDict[str, List[str]] = defaultdict(list)
-        for tz_name in sorted_timezones:
-            timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
+        if self.letters == ['all']:
+            for tz_name in sorted_timezones:
+                timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
+        else:
+            for tz_name in sorted_timezones:
+                if tz_name[0] in self.letters:
+                    timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
 
         return timezone_groups
 
