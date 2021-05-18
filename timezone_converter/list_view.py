@@ -9,7 +9,6 @@ from timezone_converter.helper import Helper
 
 
 class ListView(Helper):
-
     def __init__(self, letters: List[str]) -> None:
         self.letters = letters
 

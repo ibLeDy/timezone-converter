@@ -16,6 +16,7 @@ def _single_hour(argument: str) -> int:
         )
     return hour
 
+
 def _single_letter(argument: List[str]) -> List[str]:
     if argument == 'all':
         return ['all']
@@ -24,7 +25,7 @@ def _single_letter(argument: List[str]) -> List[str]:
         for letter in argument:
             if letter.isalpha() is False:
                 raise argparse.ArgumentError(
-                    'Value for --list must be single letters or None'
+                    'Value for --list must be single letters or None',
                 )
         return argument
 
