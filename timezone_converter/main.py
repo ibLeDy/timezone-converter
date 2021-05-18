@@ -1,6 +1,6 @@
 import argparse
 from datetime import datetime
-from typing import List, Union
+from typing import List
 
 from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.constants import VERSION
