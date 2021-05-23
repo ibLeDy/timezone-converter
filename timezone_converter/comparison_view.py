@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from typing import Iterable
 from typing import List
 from typing import Union
 
@@ -59,24 +60,19 @@ class ComparisonView(Helper):
         for header in headers:
             table.add_column(header, justify='center')
 
-        hour_range = range(24)
+        hours_to_print: Iterable[int] = range(24)
         if self.hour is not None:
-            hour_range = range(self.hour, self.hour + 1)
+            hours_to_print = [self.hour]
 
         fmt = '%Y-%m-%d %H:%M'
         current_hour = datetime.now().hour
-        for hour in hour_range:
+        for hour in hours_to_print:
             columns = [
                 (midnight + timedelta(hours=hour)).strftime(fmt)
                 for midnight in self.midnights
             ]
-            if hour == current_hour:
-                columns = [
-                    f'[blue]{(midnight + timedelta(hours=hour)).strftime(fmt)}[/blue]'
-                    for midnight in self.midnights
-                ]
-
-            table.add_row(*columns)
+            style = 'blue' if hour == current_hour else None
+            table.add_row(*columns, style=style)
 
         return table
 
