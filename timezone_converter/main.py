@@ -1,5 +1,6 @@
 import argparse
 from datetime import datetime
+import string
 from typing import List
 
 from timezone_converter.comparison_view import ComparisonView
@@ -43,9 +44,9 @@ def build_parser() -> argparse.ArgumentParser:
         '--list',
         nargs='?',
         type=_single_letter,
-        const='all',
+        const=list(string.ascii_lowercase),
         metavar='LETTER',
-        help='show all available timezones or timezones beginning with specified letter groups',
+        help='show all timezones or only those that start with specific letters',
     )
     parser.add_argument(
         '-V',
