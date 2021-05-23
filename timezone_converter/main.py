@@ -43,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
         '-l',
         '--list',
         nargs='?',
-        type=_single_letter,
+        type=_list_letter,
         const=list(string.ascii_lowercase),
         metavar='LETTER',
         help='show all timezones or only those that start with specific letters',
