@@ -17,17 +17,14 @@ def _single_hour(argument: str) -> int:
     return hour
 
 
-def _single_letter(argument: List[str]) -> List[str]:
-    if argument == 'all':
-        return ['all']
-    else:
-        argument = list(argument)
-        for letter in argument:
-            if letter.isalpha() is False:
-                raise argparse.ArgumentError(
-                    'Value for --list must be single letters or None',
-                )
-        return argument
+def _list_letter(argument: str) -> List[str]:
+    argument_set = set(argument)
+    if any(not arg.isalpha() for arg in argument_set):
+        raise argparse.ArgumentError(
+            None,
+            'Values for --list cannot contain numbers',
+        )
+    return sorted(argument_set)
 
 
 def build_parser() -> argparse.ArgumentParser:
