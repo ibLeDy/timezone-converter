@@ -30,7 +30,7 @@ class ListView(Helper):
             if timezone_groups[group]
         ]
 
-        return Columns(panels, expand=True)
+        return Columns(panels, expand=False)
 
     def print_columns(self) -> int:
         self._print_with_rich(self._build_columns())
