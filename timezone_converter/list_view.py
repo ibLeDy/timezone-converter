@@ -16,10 +16,9 @@ class ListView(Helper):
         sorted_timezones = dict(sorted(self.timezone_translations.items()))
         longest_name = len(max(sorted_timezones, key=lambda x: len(x)))
         timezone_groups: DefaultDict[str, List[str]] = defaultdict(list)
-        if self.letters:
-            for tz_name in sorted_timezones:
-                if tz_name[0] in self.letters:
-                    timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
+        for tz_name in sorted_timezones:
+            if tz_name[0] in self.letters:
+                timezone_groups[tz_name[0]].append(tz_name.center(longest_name))
 
         return timezone_groups
 
