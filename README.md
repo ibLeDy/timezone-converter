@@ -39,6 +39,18 @@
 
 ---
 
+## Table of contents
+
+- [Motivation](#motivation)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Features](#features)
+  - [Comparison between multiple timezones](#comparison-between-multiple-timezones)
+  - [Current hour highlighting](#current-hour-highlighting)
+  - [Output a single hour](#output-a-single-hour)
+  - [List available timezones](#list-available-timezones)
+- [License](#license)
+
 ## Motivation
 
 When working with people that are not in your local timezone, the available
@@ -75,7 +87,7 @@ The row containing the current hour will be highlighted.
 Using the `--single` argument, you can output a single hour. If you don't
 provide a value, the current hour will be displayed.
 
-### List of available timezones
+### List available timezones
 
 Using the `--list` argument, you can see a pretty list of available timezones,
 by groups, and sorted alphabetically.
