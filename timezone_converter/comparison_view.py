@@ -1,10 +1,12 @@
 from datetime import datetime
 from datetime import timedelta
+from difflib import get_close_matches
 from typing import Iterable
 from typing import List
 from typing import Union
 
 import pytz
+from rich.console import Console
 from rich.table import Table
 
 from timezone_converter.helper import Helper
@@ -39,7 +41,20 @@ class ComparisonView(Helper):
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
         if timezone_name is None:
-            raise SystemExit(f'error: {timezone !r} is not an available timezone')
+            possible_matches = get_close_matches(
+                timezone,
+                self.timezone_translations,
+                n=5,
+            )
+            if len(possible_matches) == 0:
+                raise SystemExit(f'error: {timezone !r} is not an available timezone')
+            console = Console()
+            table = Table()
+            table.add_column('Closest matches')
+            for match in possible_matches:
+                table.add_row(match)
+            console.print(f'error: {timezone !r} is not an available timezone')
+            raise SystemExit(console.print(table))
         return timezone_name
 
     def _get_headers(self) -> List[str]:
