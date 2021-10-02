@@ -2,6 +2,7 @@ import argparse
 import string
 from datetime import datetime
 from typing import List
+from typing import Optional
 
 from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.constants import VERSION
@@ -75,7 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    returncode = 0
+    returncode: Optional[int] = 0
     parser = build_parser()
     args = parser.parse_args()
     if args.list:
