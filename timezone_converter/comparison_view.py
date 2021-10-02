@@ -41,7 +41,7 @@ class ComparisonView(Helper):
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
         if timezone_name is None:
-            possible_matches = get_close_matches(
+            possible_matches: List[str] = get_close_matches(
                 timezone,
                 self.timezone_translations,
                 n=5,
