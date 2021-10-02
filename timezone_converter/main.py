@@ -6,6 +6,7 @@ from typing import List
 from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.constants import VERSION
 from timezone_converter.list_view import ListView
+from timezone_converter.search_view import SearchView
 
 
 def _single_hour(argument: str) -> int:
@@ -71,6 +72,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest='hour',
         help='show a single hour',
     )
+    parser.add_argument(
+        '--search',
+        nargs='?',
+        metavar='STRING',
+        help='fuzzy search for a timezone',
+    )
+
     return parser
 
 
@@ -86,6 +94,10 @@ def main() -> int:
             args.zone,
             args.hour,
         ).print_table()
+    elif args.search:
+        returncode = SearchView(
+            args.search,
+        ).print_search_results()
     else:
         parser.print_help()
     if returncode is None:
