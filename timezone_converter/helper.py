@@ -10,5 +10,5 @@ class Helper:
     timezone_translations = {tz.lower().split('/')[-1]: tz for tz in pytz.all_timezones}
 
     @staticmethod
-    def _print_with_rich(rich_object: Union[Columns, Table]) -> None:
-        Console().print(rich_object)
+    def _print_with_rich(obj: Union[str, Columns, Table]) -> None:
+        Console().print(obj)
