@@ -88,8 +88,10 @@ def main() -> int:
         ).print_table()
     else:
         parser.print_help()
+
     if returncode is None:
         returncode = 1
+
     return returncode
 
 
