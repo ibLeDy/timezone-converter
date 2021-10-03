@@ -100,7 +100,7 @@ class ComparisonView(Helper):
 
             for id in range(len(columns)):
                 if id > 0:
-                    if datetime.fromisoformat(columns[0],) < datetime.fromisoformat(
+                    if datetime.fromisoformat(columns[0]) < datetime.fromisoformat(
                         columns[id],
                     ):
                         diff = str(
