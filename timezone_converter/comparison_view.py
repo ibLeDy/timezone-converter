@@ -39,7 +39,6 @@ class ComparisonView(Helper):
             self.midnights.append(foreign_midnight)
         self.foreign_zones = self.midnights
 
-
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
         if timezone_name is None:
@@ -69,11 +68,11 @@ class ComparisonView(Helper):
                 headers.append(f'{header} ({midnight.tzname()})')
             else:
                 headers.append(header)
-                
-        for idx,midnight in enumerate(self.midnights):
-            if self.zone and idx>0:
+
+        for idx, midnight in enumerate(self.midnights):
+            if self.zone and idx > 0:
                 header = str(midnight.tzinfo).upper()
-                headers.append("Difference for "+f'{header} ({midnight.tzname()})')
+                headers.append('Difference for ' + f'{header} ({midnight.tzname()})')
 
         return headers
 
@@ -95,8 +94,11 @@ class ComparisonView(Helper):
                 for midnight in self.midnights
             ]
             for id in range(len(columns)):
-                if id>0:
-                    diff = str(datetime.fromisoformat(columns[0]) - datetime.fromisoformat(columns[id]))
+                if id > 0:
+                    diff = str(
+                        datetime.fromisoformat(columns[0])
+                        - datetime.fromisoformat(columns[id])
+                    )
                     columns.append(diff)
             style = 'blue' if hour == current_hour else None
             table.add_row(*columns, style=style)
