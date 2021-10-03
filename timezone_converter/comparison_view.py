@@ -36,10 +36,6 @@ class ComparisonView(Helper):
                 pytz.timezone(timezone_name),
             )
             self.midnights.append(foreign_midnight)
-        # self.foreign_zones = self.midnights
-
-    def get_difference(self):
-        pass
 
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
