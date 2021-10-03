@@ -65,12 +65,6 @@ def build_parser() -> argparse.ArgumentParser:
         help='show corresponding zone name in each column',
     )
     parser.add_argument(
-        '-d',
-        '--difference',
-        action='store_true',
-        help='show difference in hrs',
-    )
-    parser.add_argument(
         '-s',
         '--single',
         nargs='?',
@@ -90,12 +84,6 @@ def main() -> int:
     if args.list:
         returncode = ListView(args.list).print_columns()
     elif args.timezone:
-        if args.difference:
-            ComparisonView(
-                args.timezone,
-                args.zone,
-                args.hour,
-            ).get_difference()
         returncode = ComparisonView(
             args.timezone,
             args.zone,
