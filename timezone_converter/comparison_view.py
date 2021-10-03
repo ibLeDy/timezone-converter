@@ -97,7 +97,7 @@ class ComparisonView(Helper):
                 if id > 0:
                     diff = str(
                         datetime.fromisoformat(columns[0])
-                        - datetime.fromisoformat(columns[id])
+                        - datetime.fromisoformat(columns[id]),
                     )
                     columns.append(diff)
             style = 'blue' if hour == current_hour else None
