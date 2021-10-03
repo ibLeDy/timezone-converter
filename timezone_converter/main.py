@@ -92,10 +92,11 @@ def main() -> int:
     elif args.timezone:
         if args.difference:
             returncode = ComparisonView(
-            args.timezone,
-            args.zone,
-            args.difference,
-            args.hour,).print_table()
+                args.timezone,
+                args.zone,
+                args.difference,
+                args.hour,
+            ).print_table()
         else:
             returncode = ComparisonView(
                 args.timezone,
