@@ -59,11 +59,12 @@ class ComparisonView(Helper):
             raise SystemExit(1)
         return timezone_name
 
-    def get_difference(self):
+    def get_difference(self): -> Dict[str,str]
         fmt = '%Y-%m-%d %H:%M'
         hour = datetime.now().hour
         diff_dict = {}
-        tz0 = None
+        tz0 = datetime.fromisoformat(
+                    (self.foreign_names[0] + timedelta(hours=hour)).strftime(fmt))
         for idx, midnight in enumerate(self.foreign_zones):
             if idx > 0:
                 tz1 = datetime.fromisoformat(
