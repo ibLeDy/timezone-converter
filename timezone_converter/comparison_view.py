@@ -16,6 +16,7 @@ class ComparisonView(Helper):
         self,
         timezones: List[str],
         zone: bool,
+        difference: bool,
         hour: Union[int, None],
     ) -> None:
         self.zone = zone
@@ -29,13 +30,14 @@ class ComparisonView(Helper):
         ).astimezone()
 
         self.midnights = [local_midnight]
-
+        self.diff_dict = {}
         for timezone in timezones:
             timezone_name = self._get_timezone_name(timezone)
             foreign_midnight = local_midnight.astimezone(
                 pytz.timezone(timezone_name),
             )
             self.midnights.append(foreign_midnight)
+        self.foreign_zones = self.midnights
 
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
@@ -56,22 +58,39 @@ class ComparisonView(Helper):
             self._print_with_rich(table)
             raise SystemExit(1)
         return timezone_name
-
+    
+    def get_difference(self):	
+        fmt = '%Y-%m-%d %H:%M'	
+        hour = datetime.now().hour	
+        diff_dict = {}	
+        tz0 = None	
+        for idx, midnight in enumerate(self.foreign_zones):	
+            if idx>0:	
+                tz1 = datetime.fromisoformat((midnight + timedelta(hours=hour)).strftime(fmt))	
+                if tz0 < tz1:	
+                    diff_dict[str(midnight.tzinfo).upper()] = " (-"+str(tz1-tz0).split(":")[0]+")"	
+                else:	
+                    diff_dict[str(midnight.tzinfo).upper()] = " (+"+str(tz0-tz1).split(":")[0]+")"	
+            else:	
+                tz0 = datetime.fromisoformat((midnight + timedelta(hours=hour)).strftime(fmt))	
+        return diff_dict
+    
     def _get_headers(self) -> List[str]:
         headers: List[str] = []
+        if self.difference:	
+            self.diff_dict = self.get_difference()
         for idx, midnight in enumerate(self.midnights):
             header = str(midnight.tzinfo).upper() if idx else 'LOCAL'
 
-            if self.zone:
-                headers.append(f'{header} ({midnight.tzname()})')
+            if self.difference:	
+                    if idx >0:	
+                        headers.append(f'{header} ({midnight.tzname()})' + self.diff_dict[str(midnight.tzinfo).upper()])	
+                    else:	
+                        headers.append(f'{header} ({midnight.tzname()})')	
+                else:
+                    headers.append(f'{header} ({midnight.tzname()})')
             else:
                 headers.append(header)
-        for idx, midnight in enumerate(self.midnights):
-            if self.zone and idx > 0:
-                header = str(midnight.tzinfo).upper()
-                headers.append(
-                    'Difference for ' + f'{header} ({midnight.tzname()})',
-                )
 
         return headers
 
@@ -92,30 +111,6 @@ class ComparisonView(Helper):
                 (midnight + timedelta(hours=hour)).strftime(fmt)
                 for midnight in self.midnights
             ]
-
-            for id in range(len(columns)):
-                if id > 0:
-                    if datetime.fromisoformat(columns[0]) < datetime.fromisoformat(
-                        columns[id],
-                    ):
-                        diff = str(
-                            datetime.fromisoformat(
-                                columns[id],
-                            )
-                            - datetime.fromisoformat(
-                                columns[0],
-                            ),
-                        )
-                    else:
-                        diff = str(
-                            datetime.fromisoformat(
-                                columns[0],
-                            )
-                            - datetime.fromisoformat(
-                                columns[id],
-                            ),
-                        )
-                    columns.append(diff)
 
             style = 'blue' if hour == current_hour else None
             table.add_row(*columns, style=style)
