@@ -94,10 +94,10 @@ class ComparisonView(Helper):
             ]
             for id in range(len(columns)):
                 if id > 0:
-                    diff = str(
-                        datetime.fromisoformat(columns[0])
-                        - datetime.fromisoformat(columns[id]),
-                    )
+                    if datetime.fromisoformat(columns[0]) < datetime.fromisoformat(columns[id]):
+                        diff = str(datetime.fromisoformat(columns[id]) - datetime.fromisoformat(columns[0]))
+                    else:
+                        diff = str(datetime.fromisoformat(columns[0]) - datetime.fromisoformat(columns[id]))
                     columns.append(diff)
             style = 'blue' if hour == current_hour else None
             table.add_row(*columns, style=style)
