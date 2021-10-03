@@ -46,7 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
         nargs='?',
         type=_list_letter,
         const=list(
-            string.ascii_lowercase),
+            string.ascii_lowercase,
+        ),
         metavar='LETTER',
         help='show all timezones or only those that start with specific letters',
     )
@@ -93,7 +94,8 @@ def main() -> int:
             ComparisonView(
                 args.timezone,
                 args.zone,
-                args.hour,).get_difference()
+                args.hour,
+            ).get_difference()
         returncode = ComparisonView(
             args.timezone,
             args.zone,

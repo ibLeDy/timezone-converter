@@ -4,9 +4,10 @@ from difflib import get_close_matches
 from typing import Iterable
 from typing import List
 from typing import Union
-from backports.zoneinfo import ZoneInfo
-import tzlocal
+
 import pytz
+import tzlocal
+from backports.zoneinfo import ZoneInfo
 from rich.table import Table
 
 from timezone_converter.helper import Helper
@@ -49,18 +50,29 @@ class ComparisonView(Helper):
             if idx > 0:
                 foreign_name = name.tzinfo
                 tz1 = str(foreign_name)
-                utcoff0, utcoff1 = dt.astimezone(
-                    ZoneInfo(tz0)).utcoffset(), dt.astimezone(
-                    ZoneInfo(tz1)).utcoffset()
+                utcoff0, utcoff1 = (
+                    dt.astimezone(
+                        ZoneInfo(tz0),
+                    ).utcoffset(),
+                    dt.astimezone(
+                        ZoneInfo(tz1),
+                    ).utcoffset(),
+                )
                 diff = (utcoff1 - utcoff0).total_seconds() / 3600
                 if diff < 0:
                     print(
-                        "You are {} hrs ahead of {}".format(
-                            abs(diff), tz1.split('/')[1]))
+                        'You are {} hrs ahead of {}'.format(
+                            abs(diff),
+                            tz1.split('/')[1],
+                        ),
+                    )
                 else:
                     print(
-                        "You are {} hrs behind of {}".format(
-                            diff, tz1.split('/')[1]))
+                        'You are {} hrs behind of {}'.format(
+                            diff,
+                            tz1.split('/')[1],
+                        ),
+                    )
 
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
