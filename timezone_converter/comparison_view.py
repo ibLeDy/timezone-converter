@@ -81,8 +81,10 @@ class ComparisonView(Helper):
             self.diff_dict = self.get_difference()
         for idx, midnight in enumerate(self.midnights):
             header = str(midnight.tzinfo).upper() if idx else 'LOCAL'
+            
+            if self.zone:
 
-            if self.difference:
+                if self.difference:
                     if idx >0:
                         headers.append(f'{header} ({midnight.tzname()})' + self.diff_dict[str(midnight.tzinfo).upper()])
                     else:
