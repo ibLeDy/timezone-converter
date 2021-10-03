@@ -65,14 +65,22 @@ class ComparisonView(Helper):
         diff_dict = {}
         tz0 = None
         for idx, midnight in enumerate(self.foreign_zones):
-            if idx>0:
-                tz1 = datetime.fromisoformat((midnight + timedelta(hours=hour)).strftime(fmt))
+            if idx > 0:
+                tz1 = datetime.fromisoformat(
+                    (midnight + timedelta(hours=hour)).strftime(fmt)
+                )
                 if tz0 < tz1:
-                    diff_dict[str(midnight.tzinfo).upper()] = " (-"+str(tz1-tz0).split(":")[0]+")"
+                    diff_dict[str(midnight.tzinfo).upper()] = (
+                        ' (-' + str(tz1 - tz0).split(':')[0] + ')'
+                    )
                 else:
-                    diff_dict[str(midnight.tzinfo).upper()] = " (+"+str(tz0-tz1).split(":")[0]+")"
+                    diff_dict[str(midnight.tzinfo).upper()] = (
+                        ' (+' + str(tz0 - tz1).split(':')[0] + ')'
+                    )
             else:
-                tz0 = datetime.fromisoformat((midnight + timedelta(hours=hour)).strftime(fmt))
+                tz0 = datetime.fromisoformat(
+                    (midnight + timedelta(hours=hour)).strftime(fmt)
+                )
         return diff_dict
 
     def _get_headers(self) -> List[str]:
@@ -81,12 +89,15 @@ class ComparisonView(Helper):
             self.diff_dict = self.get_difference()
         for idx, midnight in enumerate(self.midnights):
             header = str(midnight.tzinfo).upper() if idx else 'LOCAL'
-            
+
             if self.zone:
 
                 if self.difference:
-                    if idx >0:
-                        headers.append(f'{header} ({midnight.tzname()})' + self.diff_dict[str(midnight.tzinfo).upper()])
+                    if idx > 0:
+                        headers.append(
+                            f'{header} ({midnight.tzname()})'
+                            + self.diff_dict[str(midnight.tzinfo).upper()]
+                        )
                     else:
                         headers.append(f'{header} ({midnight.tzname()})')
                 else:
