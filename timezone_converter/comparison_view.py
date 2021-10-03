@@ -7,7 +7,6 @@ from typing import List
 from typing import Union
 
 import pytz
-from backports.zoneinfo import ZoneInfo
 from rich.table import Table
 
 from timezone_converter.helper import Helper
