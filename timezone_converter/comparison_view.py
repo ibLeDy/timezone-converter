@@ -1,12 +1,13 @@
+import os
 from datetime import datetime
 from datetime import timedelta
 from difflib import get_close_matches
 from typing import Iterable
 from typing import List
 from typing import Union
-from backports.zoneinfo import ZoneInfo
-import os
+
 import pytz
+from backports.zoneinfo import ZoneInfo
 from rich.table import Table
 
 from timezone_converter.helper import Helper
@@ -37,7 +38,7 @@ class ComparisonView(Helper):
                 pytz.timezone(timezone_name),
             )
             self.midnights.append(foreign_midnight)
-        #self.foreign_zones = self.midnights
+        # self.foreign_zones = self.midnights
 
     def get_difference(self):
         pass
@@ -75,8 +76,8 @@ class ComparisonView(Helper):
             if self.zone and idx > 0:
                 header = str(midnight.tzinfo).upper()
                 headers.append(
-                    "Difference for " +
-                    f'{header} ({midnight.tzname()})')
+                    'Difference for ' + f'{header} ({midnight.tzname()})',
+                )
 
         return headers
 
@@ -100,20 +101,26 @@ class ComparisonView(Helper):
 
             for id in range(len(columns)):
                 if id > 0:
-                    if datetime.fromisoformat(
-                            columns[0]) < datetime.fromisoformat(
-                            columns[id]):
+                    if datetime.fromisoformat(columns[0],) < datetime.fromisoformat(
+                        columns[id],
+                    ):
                         diff = str(
                             datetime.fromisoformat(
-                                columns[id]) -
-                            datetime.fromisoformat(
-                                columns[0]))
+                                columns[id],
+                            )
+                            - datetime.fromisoformat(
+                                columns[0],
+                            ),
+                        )
                     else:
                         diff = str(
                             datetime.fromisoformat(
-                                columns[0]) -
-                            datetime.fromisoformat(
-                                columns[id]))
+                                columns[0],
+                            )
+                            - datetime.fromisoformat(
+                                columns[id],
+                            ),
+                        )
                     columns.append(diff)
 
             style = 'blue' if hour == current_hour else None
