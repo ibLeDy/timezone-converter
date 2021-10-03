@@ -2,4 +2,4 @@ backports.zoneinfo
 covdefaults
 coverage
 pytest
-tzlocal==2.1
+
