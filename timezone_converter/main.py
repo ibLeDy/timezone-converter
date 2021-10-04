@@ -73,9 +73,10 @@ def build_parser() -> argparse.ArgumentParser:
         help='show a single hour',
     )
     parser.add_argument(
+        '-S',
         '--search',
         nargs='?',
-        metavar='STRING',
+        metavar='WORD',
         help='fuzzy search for a timezone',
     )
 
@@ -88,16 +89,14 @@ def main() -> int:
     args = parser.parse_args()
     if args.list:
         returncode = ListView(args.list).print_columns()
+    elif args.search:
+        returncode = SearchView(args.search).print_search_results()
     elif args.timezone:
         returncode = ComparisonView(
             args.timezone,
             args.zone,
             args.hour,
         ).print_table()
-    elif args.search:
-        returncode = SearchView(
-            args.search,
-        ).print_search_results()
     else:
         parser.print_help()
     if returncode is None:

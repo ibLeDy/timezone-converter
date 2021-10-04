@@ -5,10 +5,7 @@ from timezone_converter.helper import Helper
 
 
 class SearchView(Helper):
-    def __init__(
-        self,
-        search: str,
-    ) -> None:
+    def __init__(self, search: str) -> None:
         self.search = search
 
     def _search_and_sort(self, search: str) -> List[str]:
@@ -29,6 +26,10 @@ class SearchView(Helper):
     def print_search_results(self) -> int:
         timezones = self._search_and_sort(self.search)
         self._print_with_rich(
-            f"Found {len(timezones)} {'timezone' if len(timezones) == 1 else 'timezones'}: {timezones}",  # noqa: E501
+            'Found {} {}: {}'.format(
+                len(timezones),
+                'timezone' if len(timezones) == 1 else 'timezones',
+                ', '.join(map(lambda tz: f'"{tz}"', timezones)),
+            ),
         )
         return 0
