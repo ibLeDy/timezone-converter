@@ -1,10 +1,10 @@
 from datetime import datetime
 from datetime import timedelta
 from difflib import get_close_matches
+from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Union
-from typing import Dict
 
 import pytz
 from rich.table import Table
