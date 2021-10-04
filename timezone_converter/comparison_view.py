@@ -60,7 +60,7 @@ class ComparisonView(Helper):
             raise SystemExit(1)
         return timezone_name
 
-    def get_difference(self): -> Dict
+    def get_difference(self): -> Dict[str, str]
         fmt = '%Y-%m-%d %H:%M'
         hour = datetime.now().hour
         diff_dict: Dict[str, str] = {}
