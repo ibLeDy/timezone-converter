@@ -60,7 +60,7 @@ class ComparisonView(Helper):
             raise SystemExit(1)
         return timezone_name
 
-    def get_difference(self): -> None
+    def get_difference(self) -> Dict[str, str]:
         fmt = '%Y-%m-%d %H:%M'
         hour = datetime.now().hour
         diff_dict: Dict[str, str] = {}
@@ -84,10 +84,12 @@ class ComparisonView(Helper):
                 tz0 = datetime.fromisoformat(
                     (midnight + timedelta(hours=hour)).strftime(fmt),
                 )
-        self.diff_dict = diff_dict
+        return diff_dict
 
     def _get_headers(self) -> List[str]:
         headers: List[str] = []
+        if self.difference:
+            self.diff_dict = self.get_difference()
         for idx, midnight in enumerate(self.midnights):
             header = str(midnight.tzinfo).upper() if idx else 'LOCAL'
 
