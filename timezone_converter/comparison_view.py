@@ -4,6 +4,7 @@ from difflib import get_close_matches
 from typing import Iterable
 from typing import List
 from typing import Union
+from typing import Dict
 
 import pytz
 from rich.table import Table
@@ -59,7 +60,7 @@ class ComparisonView(Helper):
             raise SystemExit(1)
         return timezone_name
 
-    def get_difference(self):
+    def get_difference(self): -> Dict
         fmt = '%Y-%m-%d %H:%M'
         hour = datetime.now().hour
         diff_dict: Dict[str, str] = {}
