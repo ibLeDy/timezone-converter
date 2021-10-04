@@ -21,7 +21,7 @@ class ComparisonView(Helper):
     ) -> None:
         self.zone = zone
         self.hour = hour
-
+        self.difference = difference
         current_dt = datetime.now()
         local_midnight = datetime(
             current_dt.year,
@@ -62,9 +62,9 @@ class ComparisonView(Helper):
     def get_difference(self):
         fmt = '%Y-%m-%d %H:%M'
         hour = datetime.now().hour
-        diff_dict = {}
+        diff_dict: Dict[str, str] = {}
         tz0 = datetime.fromisoformat(
-            (self.foreign_names[0] + timedelta(hours=hour)).strftime(fmt),
+            (self.foreign_zones[0] + timedelta(hours=hour)).strftime(fmt),
         )
         for idx, midnight in enumerate(self.foreign_zones):
             if idx > 0:
