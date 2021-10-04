@@ -64,11 +64,12 @@ class ComparisonView(Helper):
         hour = datetime.now().hour
         diff_dict = {}
         tz0 = datetime.fromisoformat(
-            (self.foreign_names[0] + timedelta(hours=hour)).strftime(fmt))
+            (self.foreign_names[0] + timedelta(hours=hour)).strftime(fmt),
+        )
         for idx, midnight in enumerate(self.foreign_zones):
             if idx > 0:
                 tz1 = datetime.fromisoformat(
-                    (midnight + timedelta(hours=hour)).strftime(fmt)
+                    (midnight + timedelta(hours=hour)).strftime(fmt),
                 )
                 if tz0 < tz1:
                     diff_dict[str(midnight.tzinfo).upper()] = (
@@ -80,7 +81,7 @@ class ComparisonView(Helper):
                     )
             else:
                 tz0 = datetime.fromisoformat(
-                    (midnight + timedelta(hours=hour)).strftime(fmt)
+                    (midnight + timedelta(hours=hour)).strftime(fmt),
                 )
         return diff_dict
 
@@ -97,7 +98,7 @@ class ComparisonView(Helper):
                     if idx > 0:
                         headers.append(
                             f'{header} ({midnight.tzname()})'
-                            + self.diff_dict[str(midnight.tzinfo).upper()]
+                            + self.diff_dict[str(midnight.tzinfo).upper()],
                         )
                     else:
                         headers.append(f'{header} ({midnight.tzname()})')
