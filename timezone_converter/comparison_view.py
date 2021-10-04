@@ -31,7 +31,7 @@ class ComparisonView(Helper):
         ).astimezone()
 
         self.midnights = [local_midnight]
-        self.diff_dict = {}
+        self.diff_dict: Dict[str, str] = {}
         for timezone in timezones:
             timezone_name = self._get_timezone_name(timezone)
             foreign_midnight = local_midnight.astimezone(
