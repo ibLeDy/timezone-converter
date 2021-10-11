@@ -42,8 +42,10 @@ class ComparisonView(Helper):
             self._sort_timezone_display()
 
     def _sort_timezone_display(self):
-        local_offset = int(self.midnights[0].strftime("%z"))
-        self.midnights.sort(key=lambda zone: abs(local_offset - int(zone.strftime("%z"))))
+        local_offset = int(self.midnights[0].strftime('%z'))
+        self.midnights.sort(
+            key=lambda zone: abs(local_offset - int(zone.strftime('%z')))
+        )
 
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
