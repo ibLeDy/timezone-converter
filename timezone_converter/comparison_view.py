@@ -44,7 +44,7 @@ class ComparisonView(Helper):
     def _sort_timezone_display(self) -> None:
         local_offset = int(self.midnights[0].strftime('%z'))
         self.midnights.sort(
-            key=lambda zone: abs(local_offset - int(zone.strftime('%z')))
+            key=lambda zone: abs(local_offset - int(zone.strftime('%z'))),
         )
 
     def _get_timezone_name(self, timezone: str) -> str:
