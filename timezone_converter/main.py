@@ -84,7 +84,7 @@ def build_parser() -> argparse.ArgumentParser:
         '-o',
         '--order',
         action='store_true',
-        help='show timezones in order of difference'
+        help='show timezones in order of difference',
     )
 
     return parser
