@@ -80,6 +80,12 @@ def build_parser() -> argparse.ArgumentParser:
         metavar='WORD',
         help='fuzzy search for a timezone',
     )
+    parser.add_argument(
+        '-o',
+        '--order',
+        action='store_true',
+        help='show timezones in order of difference',
+    )
 
     return parser
 
@@ -97,6 +103,7 @@ def main() -> int:
             args.timezone,
             args.zone,
             args.hour,
+            args.order,
         ).print_table()
     else:
         parser.print_help()

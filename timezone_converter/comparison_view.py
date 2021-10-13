@@ -17,6 +17,7 @@ class ComparisonView(Helper):
         timezones: List[str],
         zone: bool,
         hour: Union[int, None],
+        order: bool,
     ) -> None:
         self.zone = zone
         self.hour = hour
@@ -36,6 +37,15 @@ class ComparisonView(Helper):
                 pytz.timezone(timezone_name),
             )
             self.midnights.append(foreign_midnight)
+
+        if order:
+            self._sort_timezone_display()
+
+    def _sort_timezone_display(self) -> None:
+        local_offset = int(self.midnights[0].strftime('%z'))
+        self.midnights.sort(
+            key=lambda zone: abs(local_offset - int(zone.strftime('%z'))),
+        )
 
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
