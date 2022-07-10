@@ -90,7 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
         '-d',
         '--difference',
         action='store_true',
-        help='show difference(s) between your local and given timezone(s)'
+        help='show difference(s) between your local and given timezone(s)',
     )
 
     return parser

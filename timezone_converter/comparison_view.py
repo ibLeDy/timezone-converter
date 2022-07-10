@@ -71,24 +71,24 @@ class ComparisonView(Helper):
 
     def _difference_string(self, foreign_midnight) -> str:
         # assumption that first object in midnights string is always the local one
-        local_difference: int = int(self.midnights[0].strftime("%z")[:3])
-        foreign_difference: int = int(foreign_midnight.strftime("%z")[:3])
+        local_difference: int = int(self.midnights[0].strftime('%z')[:3])
+        foreign_difference: int = int(foreign_midnight.strftime('%z')[:3])
 
         # compute the difference between time zones
         absolute_difference: int = abs(local_difference - foreign_difference)
 
         # add that difference to string
-        difference_string: str = f"{absolute_difference}"
+        difference_string: str = f'{absolute_difference}'
         # if absolute_difference has only one digit, we should add a leading zero
         if 10 > absolute_difference > -10:
-            difference_string = "0" + difference_string
+            difference_string = '0' + difference_string
 
         # if foreign_difference is less than local_difference then foreign timezone must be behind the local one
         # and we must add negative sign in front of difference_string (otherwise we will add positive sign)
         if foreign_difference < local_difference:
-            difference_string = "-" + difference_string
+            difference_string = '-' + difference_string
         else:
-            difference_string = "+" + difference_string
+            difference_string = '+' + difference_string
 
         return difference_string
 
@@ -97,22 +97,22 @@ class ComparisonView(Helper):
         for idx, midnight in enumerate(self.midnights):
             # if idx == 0 then we are setting first column so place is called "LOCAL"
             if not idx:
-                place = "LOCAL"
+                place = 'LOCAL'
             # else we are dealing with other columns
             else:
                 place = str(midnight.tzinfo).upper()
 
             # we start constructing header by adding a place to it
-            header = f"{place}"
+            header = f'{place}'
 
             # if zone parameter is True then we add timezone_name to the header
             if self.zone:
                 timezone_name = midnight.tzname()
-                header += f" ({timezone_name})"
+                header += f' ({timezone_name})'
 
             # if difference parameter is True then we add difference to the header
             if self.difference:
-                header += f" ({self._difference_string(midnight)})"
+                header += f' ({self._difference_string(midnight)})'
 
             headers.append(header)
 
