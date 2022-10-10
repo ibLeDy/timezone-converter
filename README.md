@@ -60,6 +60,12 @@ pip install -U timezone-converter
 timezone-converter <timezone> [<timezone> ...]
 ```
 
+### Docker
+
+```bash
+docker run --rm -t bledy/timezone-converter <timezone> [<timezone> ...]
+```
+
 ## Features
 
 ### Comparison between multiple timezones
