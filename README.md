@@ -63,7 +63,7 @@ timezone-converter <timezone> [<timezone> ...]
 ### Docker
 
 ```bash
-docker run --rm -t timezone-converter <timezone> [<timezone> ...]
+docker run --rm -t bledy/timezone-converter <timezone> [<timezone> ...]
 ```
 
 ## Features
