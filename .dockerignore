@@ -1,0 +1,12 @@
+.git
+.github
+.mypy_cache
+.pre-commit-config.yaml
+.pytest_cache
+.venv
+.tox
+*.egg-info
+build
+dist
+requirements-dev.txt
+test
