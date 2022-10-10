@@ -24,7 +24,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -34,7 +33,7 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-requires-python = ">=3.6.1"
+requires-python = ">=3.7"
 dependencies = [
     "importlib-metadata; python_version < '3.8'",
     "pytz>=2021.1",
@@ -80,15 +79,15 @@ plugins = "covdefaults"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py36, py37, py38, py39
+envlist = py37, py38, py39, py310
 isolated_build = True
 
 [gh-actions]
 python =
-    3.6: py36
     3.7: py37
     3.8: py38
     3.9: py39
+    3.10: py310
 
 [testenv]
 commands =
