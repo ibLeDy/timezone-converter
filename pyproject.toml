@@ -36,6 +36,7 @@ classifiers = [
 ]
 requires-python = ">=3.6.1"
 dependencies = [
+    "importlib-metadata;python_version<'3.8'",
     "pytz>=2021.1",
     "rich>=10.0.1",
 ]
