@@ -39,7 +39,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
@@ -50,5 +50,3 @@ jobs:
           context: .
           push: true
           tags: bledy/timezone-converter:${{ steps.meta.outputs.tags }}
-      
-
