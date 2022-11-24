@@ -86,6 +86,12 @@ def build_parser() -> argparse.ArgumentParser:
         action='store_true',
         help='show timezones in order of difference',
     )
+    parser.add_argument(
+        '-d',
+        '--difference',
+        action='store_true',
+        help='show difference(s) between your local and given timezone(s)',
+    )
 
     return parser
 
@@ -102,6 +108,7 @@ def main() -> int:
         returncode = ComparisonView(
             args.timezone,
             args.zone,
+            args.difference,
             args.hour,
             args.order,
         ).print_table()
