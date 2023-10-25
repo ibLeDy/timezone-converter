@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "timezone-converter"
-version = "0.12.1"
+version = "0.14.0"
 description = "Compare your local timezone with foreign ones."
 license = "MIT"
 license-files = { paths = ["LICENSE"] }
@@ -37,8 +37,8 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
     "importlib-metadata",
-    "pytz>=2022.6",
-    "rich>=12.6.0",
+    "pytz>=2023.3.post1",
+    "rich>=13.6.0",
 ]
 
 [project.scripts]
