@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "timezone-converter"
-version = "0.12.1"
+version = "0.13.0"
 description = "Compare your local timezone with foreign ones."
 license = "MIT"
 license-files = { paths = ["LICENSE"] }
