@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "timezone-converter"
-version = "0.12.1"
+version = "0.14.0"
 description = "Compare your local timezone with foreign ones."
 license = "MIT"
 license-files = { paths = ["LICENSE"] }
@@ -24,20 +24,21 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Terminals",
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
-    "importlib-metadata; python_version < '3.8'",
-    "pytz>=2022.6",
-    "rich>=12.6.0",
+    "importlib-metadata",
+    "pytz>=2023.3.post1",
+    "rich>=13.6.0",
 ]
 
 [project.scripts]
@@ -79,15 +80,16 @@ plugins = "covdefaults"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37, py38, py39, py310
+envlist = py38, py39, py310, py311, py312
 isolated_build = True
 
 [gh-actions]
 python =
-    3.7: py37
     3.8: py38
     3.9: py39
     3.10: py310
+    3.11: py311
+    3.12: py312
 
 [testenv]
 commands =
