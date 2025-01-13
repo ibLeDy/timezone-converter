@@ -9,7 +9,7 @@ name = "timezone-converter"
 version = "0.14.0"
 description = "Compare your local timezone with foreign ones."
 license = "MIT"
-license-files = { paths = ["LICENSE"] }
+license-files = ["LICENSE"]
 readme = "README.md"
 authors = [
     { name = "Iago Alonso", email = "deejaynof@gmail.com" },
