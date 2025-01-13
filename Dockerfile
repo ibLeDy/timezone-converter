@@ -1,6 +1,6 @@
 FROM python:3.13-slim-bullseye
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
 LABEL maintainer="deejaynof@gmail.com"
 
