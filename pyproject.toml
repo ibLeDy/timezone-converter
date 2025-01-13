@@ -36,9 +36,8 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "importlib-metadata",
-    "pytz>=2023.3.post1",
-    "rich>=13.6.0",
+    "pytz>=2024.1",
+    "rich>=13.9.4",
 ]
 
 [project.scripts]
