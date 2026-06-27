@@ -1,9 +1,10 @@
 from datetime import datetime
 from datetime import timedelta
+from datetime import tzinfo
 from difflib import get_close_matches
 from typing import Iterable
 from typing import List
-from typing import Union
+from typing import Optional
 
 import pytz
 from rich.table import Table
@@ -16,36 +17,46 @@ class ComparisonView(Helper):
         self,
         timezones: List[str],
         zone: bool,
-        hour: Union[int, None],
+        hour: Optional[int],
         order: bool,
     ) -> None:
         self.zone = zone
         self.hour = hour
 
         current_dt = datetime.now()
-        local_midnight = datetime(
+        self.base_instant = datetime(
             current_dt.year,
             current_dt.month,
             current_dt.day,
         ).astimezone()
 
-        self.midnights = [local_midnight]
+        # ``None`` represents the local timezone; it is rendered with the
+        # no-argument ``astimezone`` so it tracks DST at each instant.
+        self.zones: List[Optional[tzinfo]] = [None]
 
         for timezone in timezones:
             timezone_name = self._get_timezone_name(timezone)
-            foreign_midnight = local_midnight.astimezone(
-                pytz.timezone(timezone_name),
-            )
-            self.midnights.append(foreign_midnight)
+            self.zones.append(pytz.timezone(timezone_name))
 
         if order:
             self._sort_timezone_display()
 
+    def _convert(
+        self,
+        zone: Optional[tzinfo],
+        instant: Optional[datetime] = None,
+    ) -> datetime:
+        if instant is None:
+            instant = self.base_instant
+        return instant.astimezone() if zone is None else instant.astimezone(zone)
+
+    def _offset(self, zone: Optional[tzinfo]) -> timedelta:
+        # Aware datetimes always report an offset; ``or`` only narrows the type.
+        return self._convert(zone).utcoffset() or timedelta(0)
+
     def _sort_timezone_display(self) -> None:
-        local_offset = int(self.midnights[0].strftime('%z'))
-        self.midnights.sort(
-            key=lambda zone: abs(local_offset - int(zone.strftime('%z'))),
-        )
+        local_offset = self._offset(None)
+        self.zones.sort(key=lambda zone: abs(self._offset(zone) - local_offset))
 
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.timezone_translations.get(timezone.lower())
@@ -69,11 +80,11 @@ class ComparisonView(Helper):
 
     def _get_headers(self) -> List[str]:
         headers: List[str] = []
-        for idx, midnight in enumerate(self.midnights):
-            header = str(midnight.tzinfo).upper() if idx else 'LOCAL'
+        for zone in self.zones:
+            header = 'LOCAL' if zone is None else str(zone).upper()
 
             if self.zone:
-                headers.append(f'{header} ({midnight.tzname()})')
+                headers.append(f'{header} ({self._convert(zone).tzname()})')
             else:
                 headers.append(header)
 
@@ -90,13 +101,14 @@ class ComparisonView(Helper):
             hours_to_print = [self.hour]
 
         fmt = '%Y-%m-%d %H:%M'
-        current_hour = datetime.now().hour
+        now = datetime.now().astimezone()
         for hour in hours_to_print:
+            instant = self.base_instant + timedelta(hours=hour)
             columns = [
-                (midnight + timedelta(hours=hour)).strftime(fmt)
-                for midnight in self.midnights
+                self._convert(zone, instant).strftime(fmt) for zone in self.zones
             ]
-            style = 'blue' if hour == current_hour else None
+            highlighted = instant <= now < instant + timedelta(hours=1)
+            style = 'blue' if highlighted else None
             table.add_row(*columns, style=style)
 
         return table
