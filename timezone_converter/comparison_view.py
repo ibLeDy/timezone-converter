@@ -59,7 +59,7 @@ class ComparisonView(Helper):
         self.zones.sort(key=lambda zone: abs(self._offset(zone) - local_offset))
 
     def _get_timezone_name(self, timezone: str) -> str:
-        timezone_name = self.timezone_translations.get(timezone.lower())
+        timezone_name = self.resolve_timezone(timezone)
         if timezone_name is None:
             error_msg = f'error: {timezone !r} is not an available timezone'
             possible_matches: List[str] = get_close_matches(
