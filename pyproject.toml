@@ -74,7 +74,9 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [tool.coverage.run]
-plugins = "covdefaults"
+plugins = [
+    "covdefaults",
+]
 
 [tool.tox]
 legacy_tox_ini = """
@@ -91,7 +93,14 @@ python =
     3.13: py313
 
 [testenv]
+deps =
+    covdefaults
+    coverage
+    pytest
 commands =
+    coverage erase
+    coverage run -m pytest
+    coverage report
     timezone-converter
     timezone-converter --help
     timezone-converter tijuana
@@ -100,6 +109,8 @@ commands =
     timezone-converter tijuana new_york
     timezone-converter tijuana new_york --single
     timezone-converter tijuana --zone
-    timezone-converter tijuana --list
-    timezone-converter tijuana --list tbd
+    timezone-converter tijuana new_york --order
+    timezone-converter --search york
+    timezone-converter --list
+    timezone-converter --list tbd
 """
