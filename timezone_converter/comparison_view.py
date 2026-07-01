@@ -1,12 +1,13 @@
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone as datetime_timezone
 from datetime import tzinfo
 from difflib import get_close_matches
 from typing import Iterable
 from typing import List
 from typing import Optional
+from zoneinfo import ZoneInfo
 
-import pytz
 from rich.table import Table
 
 from timezone_converter.helper import Helper
@@ -36,7 +37,7 @@ class ComparisonView(Helper):
 
         for timezone in timezones:
             timezone_name = self._get_timezone_name(timezone)
-            self.zones.append(pytz.timezone(timezone_name))
+            self.zones.append(ZoneInfo(timezone_name))
 
         if order:
             self._sort_timezone_display()
@@ -103,7 +104,9 @@ class ComparisonView(Helper):
         fmt = '%Y-%m-%d %H:%M'
         now = datetime.now().astimezone()
         for hour in hours_to_print:
-            instant = self.base_instant + timedelta(hours=hour)
+            instant = self.base_instant.astimezone(
+                datetime_timezone.utc,
+            ) + timedelta(hours=hour)
             columns = [
                 self._convert(zone, instant).strftime(fmt) for zone in self.zones
             ]

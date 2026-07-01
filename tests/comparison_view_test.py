@@ -1,8 +1,9 @@
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone as datetime_timezone
+from zoneinfo import ZoneInfo
 
 import pytest
-import pytz
 
 from timezone_converter.comparison_view import ComparisonView
 
@@ -50,11 +51,11 @@ def test_order_sorts_by_true_offset_not_hhmm_digits(monkeypatch):
     # Regression: --order previously sorted by int(strftime('%z')), turning
     # +0530 into 530, so offset distances were measured on HHMM digits.
     view = _make_view(['gmt+12', 'calcutta'])
-    view.base_instant = datetime(2026, 1, 15, tzinfo=pytz.UTC)
+    view.base_instant = datetime(2026, 1, 15, tzinfo=datetime_timezone.utc)
     view.zones = [
         None,
-        pytz.timezone('Etc/GMT+12'),
-        pytz.timezone('Asia/Calcutta'),
+        ZoneInfo('Etc/GMT+12'),
+        ZoneInfo('Asia/Calcutta'),
     ]
 
     # Pin the local reference to -0330 (St John's) so the result is
@@ -87,10 +88,13 @@ def test_dst_transition_is_normalized_across_the_day():
     # Regression: rows were built as midnight + timedelta on a fixed-offset
     # datetime, freezing the offset, so the spring-forward hour was wrong.
     view = _make_view(['new_york'])
-    view.base_instant = pytz.timezone('America/New_York').localize(
-        datetime(2026, 3, 8),  # DST starts 02:00 -> 03:00
-    )
-    view.zones = [None, pytz.timezone('America/New_York')]
+    view.base_instant = datetime(
+        2026,
+        3,
+        8,
+        tzinfo=ZoneInfo('America/New_York'),
+    )  # DST starts 02:00 -> 03:00
+    view.zones = [None, ZoneInfo('America/New_York')]
     cells = list(view._build_table().columns[1]._cells)
     assert cells[1] == '2026-03-08 01:00'
     assert cells[2] == '2026-03-08 03:00'  # 02:00 does not exist
@@ -99,16 +103,19 @@ def test_dst_transition_is_normalized_across_the_day():
 
 def test_headers_without_zone():
     view = _make_view(['new_york'])
-    view.zones = [None, pytz.timezone('America/New_York')]
+    view.zones = [None, ZoneInfo('America/New_York')]
     assert view._get_headers() == ['LOCAL', 'AMERICA/NEW_YORK']
 
 
 def test_headers_with_zone_include_abbreviation():
     view = _make_view(['new_york'], zone=True)
-    view.base_instant = pytz.timezone('America/New_York').localize(
-        datetime(2026, 3, 8),
+    view.base_instant = datetime(
+        2026,
+        3,
+        8,
+        tzinfo=ZoneInfo('America/New_York'),
     )
-    view.zones = [None, pytz.timezone('America/New_York')]
+    view.zones = [None, ZoneInfo('America/New_York')]
     headers = view._get_headers()
     assert headers[0].startswith('LOCAL (')
     assert headers[1] == 'AMERICA/NEW_YORK (EST)'

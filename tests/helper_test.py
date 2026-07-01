@@ -1,4 +1,4 @@
-import pytz
+from zoneinfo import available_timezones
 
 from timezone_converter.helper import Helper
 
@@ -14,7 +14,7 @@ def test_available_timezones_include_short_names_and_shadowed_paths():
 
 
 def test_searchable_timezones_include_all_canonical_paths():
-    for tz in pytz.all_timezones:
+    for tz in available_timezones():
         assert tz.lower() in Helper.searchable_timezones
 
 
@@ -38,7 +38,7 @@ def test_unknown_timezone_resolves_to_none():
 def test_every_timezone_is_reachable():
     # Several zones share a last path segment (e.g. Asia/Istanbul vs
     # Europe/Istanbul); none may be silently unreachable.
-    for tz in pytz.all_timezones:
+    for tz in available_timezones():
         assert Helper.resolve_timezone(tz) == tz
 
 

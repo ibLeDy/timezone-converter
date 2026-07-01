@@ -1,3 +1,6 @@
 covdefaults
 coverage
+pre-commit
 pytest
+tox
+tox-gh-actions
