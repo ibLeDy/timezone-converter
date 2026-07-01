@@ -3,7 +3,6 @@ from datetime import timedelta
 from datetime import timezone as datetime_timezone
 from datetime import tzinfo
 from difflib import get_close_matches
-from typing import Iterable
 from typing import List
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -11,6 +10,13 @@ from zoneinfo import ZoneInfo
 from rich.table import Table
 
 from timezone_converter.helper import Helper
+
+
+def _to_local(instant: datetime) -> datetime:
+    # Single seam for the machine-local conversion. Production uses the
+    # no-argument ``astimezone`` so it tracks DST; tests monkeypatch this to
+    # pin a specific zone across platforms (``time.tzset`` is POSIX only).
+    return instant.astimezone()
 
 
 class ComparisonView(Helper):
@@ -49,7 +55,7 @@ class ComparisonView(Helper):
     ) -> datetime:
         if instant is None:
             instant = self.base_instant
-        return instant.astimezone() if zone is None else instant.astimezone(zone)
+        return _to_local(instant) if zone is None else instant.astimezone(zone)
 
     def _offset(self, zone: Optional[tzinfo]) -> timedelta:
         # Aware datetimes always report an offset; ``or`` only narrows the type.
@@ -91,22 +97,38 @@ class ComparisonView(Helper):
 
         return headers
 
+    def _day_instants(self) -> List[datetime]:
+        # Walk the local day in real one-hour steps instead of a fixed 24, so
+        # the LOCAL column always spans exactly one calendar day. A day is 23,
+        # 24 or 25 hours long across DST changes; ``range(24)`` would otherwise
+        # spill into the next day (spring forward) or drop the last hour (fall
+        # back). Stepping absolute UTC instants keeps each conversion DST-aware.
+        base_utc = self.base_instant.astimezone(datetime_timezone.utc)
+        base_date = _to_local(self.base_instant).date()
+        instants: List[datetime] = []
+        hour = 0
+        instant = base_utc
+        while _to_local(instant).date() == base_date:
+            instants.append(instant)
+            hour += 1
+            instant = base_utc + timedelta(hours=hour)
+        return instants
+
     def _build_table(self) -> Table:
         headers = self._get_headers()
         table = Table()
         for header in headers:
             table.add_column(header, justify='center')
 
-        hours_to_print: Iterable[int] = range(24)
         if self.hour is not None:
-            hours_to_print = [self.hour]
+            base_utc = self.base_instant.astimezone(datetime_timezone.utc)
+            instants: List[datetime] = [base_utc + timedelta(hours=self.hour)]
+        else:
+            instants = self._day_instants()
 
         fmt = '%Y-%m-%d %H:%M'
         now = datetime.now().astimezone()
-        for hour in hours_to_print:
-            instant = self.base_instant.astimezone(
-                datetime_timezone.utc,
-            ) + timedelta(hours=hour)
+        for instant in instants:
             columns = [
                 self._convert(zone, instant).strftime(fmt) for zone in self.zones
             ]
