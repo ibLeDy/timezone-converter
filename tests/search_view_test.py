@@ -25,6 +25,13 @@ def test_search_includes_ambiguous_canonical_paths(capsys):
     assert 'asia/istanbul' in capsys.readouterr().out
 
 
+def test_search_includes_unambiguous_canonical_paths(capsys):
+    SearchView('America/New_York').print_search_results()
+    out = capsys.readouterr().out
+    assert 'Found 1 timezone:' in out
+    assert 'america/new_york' in out
+
+
 def test_search_no_results(capsys):
     SearchView('zzzzzzzzzz').print_search_results()
     assert 'Found 0 timezones' in capsys.readouterr().out

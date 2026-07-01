@@ -24,10 +24,10 @@ A CLI tool (published to PyPI as `timezone-converter`) that prints a full day of
 
 Three "view" classes drive the three mutually-exclusive modes, dispatched in `main.main()` based on parsed args (`--list` → `--search` → positional `timezone` → help). Each view subclasses `Helper` and exposes a single `print_*()` method returning an `int` exit code.
 
-- `helper.py` — `Helper` base class. Owns timezone lookup data: `timezone_translations` maps the lowercased last path segment of every `pytz.all_timezones` entry (e.g. `new_york`) to its canonical name (e.g. `America/New_York`), `_canonical_paths` preserves exact full-path lookups, and `available_timezones` powers list/search discovery. Also wraps all output via `_print_with_rich`.
+- `helper.py` — `Helper` base class. Owns timezone lookup data: `timezone_translations` maps the lowercased last path segment of every `pytz.all_timezones` entry (e.g. `new_york`) to its canonical name (e.g. `America/New_York`), `_canonical_paths` preserves exact full-path lookups, `available_timezones` powers list discovery, and `searchable_timezones` powers search/suggestions. Also wraps all output via `_print_with_rich`.
 - `comparison_view.py` — `ComparisonView`: the default mode. Computes local midnight, converts it to each foreign timezone, then renders a 24-row (or single-hour) table. `--zone` adds tz abbreviation to headers, `--order` sorts columns by UTC-offset distance from local, `--single` limits to one hour, current hour is highlighted blue. Unknown timezones raise `SystemExit` after showing `difflib.get_close_matches` suggestions.
 - `list_view.py` — `ListView`: `--list [LETTERS]` renders all timezones grouped by first letter into `rich` panels.
-- `search_view.py` — `SearchView`: `--search WORD` fuzzy-matches against `available_timezones` via `difflib.get_close_matches`.
+- `search_view.py` — `SearchView`: `--search WORD` fuzzy-matches against `searchable_timezones` via `difflib.get_close_matches`.
 - `main.py` — argparse setup (`build_parser`) and dispatch. Custom arg types `_single_hour` (validates 0–23) and `_list_letter` (alpha-only).
 - `constants.py` — `VERSION` read from installed package metadata via `importlib.metadata`.
 

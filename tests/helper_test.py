@@ -13,6 +13,11 @@ def test_available_timezones_include_short_names_and_shadowed_paths():
     assert 'europe/istanbul' in Helper.available_timezones
 
 
+def test_searchable_timezones_include_all_canonical_paths():
+    for tz in pytz.all_timezones:
+        assert tz.lower() in Helper.searchable_timezones
+
+
 def test_print_with_rich_outputs(capsys):
     Helper._print_with_rich('hello world')
     assert 'hello world' in capsys.readouterr().out

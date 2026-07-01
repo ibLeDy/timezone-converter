@@ -11,7 +11,7 @@ class SearchView(Helper):
     def _search_and_sort(self, search: str) -> List[str]:
         timezones: List[str] = get_close_matches(
             search,
-            self.available_timezones,
+            self.searchable_timezones,
         )
 
         if len(timezones) > 0:

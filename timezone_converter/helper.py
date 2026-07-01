@@ -25,6 +25,7 @@ _AVAILABLE_TIMEZONES = sorted(
         if tz.lower().split('/')[-1] in _AMBIGUOUS_SEGMENTS
     ),
 )
+_SEARCHABLE_TIMEZONES = sorted(set(_AVAILABLE_TIMEZONES).union(_CANONICAL_PATHS))
 
 
 class Helper:
@@ -40,6 +41,10 @@ class Helper:
     # User-facing names for list/search. Most zones keep their short friendly
     # alias; canonical paths are added when the short alias is ambiguous.
     available_timezones: List[str] = _AVAILABLE_TIMEZONES
+
+    # Search/suggestion names include every canonical path so full timezone
+    # names can be found without making the list output noisy.
+    searchable_timezones: List[str] = _SEARCHABLE_TIMEZONES
 
     @classmethod
     def resolve_timezone(cls, name: str) -> Optional[str]:
