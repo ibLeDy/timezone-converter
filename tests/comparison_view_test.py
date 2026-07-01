@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone as datetime_timezone
@@ -10,6 +11,24 @@ from timezone_converter.comparison_view import ComparisonView
 
 def _make_view(timezones=('new_york',), zone=False, hour=None, order=False):
     return ComparisonView(list(timezones), zone, hour, order)
+
+
+@pytest.fixture
+def local_timezone(monkeypatch):
+    # Pin the machine timezone so the LOCAL column is deterministic, restoring
+    # the process clock afterwards.
+    def _set(name):
+        monkeypatch.setenv('TZ', name)
+        time.tzset()
+
+    yield _set
+    time.tzset()
+
+
+def _local_column(day):
+    view = _make_view(['london'])
+    view.base_instant = datetime(*day).astimezone()
+    return list(view._build_table().columns[0]._cells)
 
 
 def test_resolves_valid_timezone_to_canonical_zone():
@@ -99,6 +118,26 @@ def test_dst_transition_is_normalized_across_the_day():
     assert cells[1] == '2026-03-08 01:00'
     assert cells[2] == '2026-03-08 03:00'  # 02:00 does not exist
     assert '2026-03-08 02:00' not in cells
+
+
+def test_local_day_does_not_spill_when_clocks_spring_forward(local_timezone):
+    # Regression: a 23-hour local day forced a 24th row into the next day.
+    local_timezone('America/New_York')
+    cells = _local_column((2026, 3, 8))  # DST starts 02:00 -> 03:00
+    assert len(cells) == 23
+    assert cells[0] == '2026-03-08 00:00'
+    assert cells[-1] == '2026-03-08 23:00'
+    assert all(cell.startswith('2026-03-08') for cell in cells)
+
+
+def test_local_day_is_complete_when_clocks_fall_back(local_timezone):
+    # Regression: a 25-hour local day was truncated at 22:00 by range(24).
+    local_timezone('America/New_York')
+    cells = _local_column((2026, 11, 1))  # DST ends 02:00 -> 01:00
+    assert len(cells) == 25
+    assert cells[-1] == '2026-11-01 23:00'
+    assert cells.count('2026-11-01 01:00') == 2  # repeated hour is shown
+    assert all(cell.startswith('2026-11-01') for cell in cells)
 
 
 def test_headers_without_zone():

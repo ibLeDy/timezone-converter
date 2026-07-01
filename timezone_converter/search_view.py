@@ -13,9 +13,7 @@ class SearchView(Helper):
             search,
             self.searchable_timezones,
         )
-
-        if len(timezones) > 0:
-            timezones.sort()
+        timezones.sort()
 
         # If the search term has a corresponding timezone, return it instead
         if search in timezones:
