@@ -12,6 +12,13 @@ from rich.table import Table
 from timezone_converter.helper import Helper
 
 
+def _to_local(instant: datetime) -> datetime:
+    # Single seam for the machine-local conversion. Production uses the
+    # no-argument ``astimezone`` so it tracks DST; tests monkeypatch this to
+    # pin a specific zone across platforms (``time.tzset`` is POSIX only).
+    return instant.astimezone()
+
+
 class ComparisonView(Helper):
     def __init__(
         self,
@@ -48,7 +55,7 @@ class ComparisonView(Helper):
     ) -> datetime:
         if instant is None:
             instant = self.base_instant
-        return instant.astimezone() if zone is None else instant.astimezone(zone)
+        return _to_local(instant) if zone is None else instant.astimezone(zone)
 
     def _offset(self, zone: Optional[tzinfo]) -> timedelta:
         # Aware datetimes always report an offset; ``or`` only narrows the type.
@@ -97,11 +104,11 @@ class ComparisonView(Helper):
         # spill into the next day (spring forward) or drop the last hour (fall
         # back). Stepping absolute UTC instants keeps each conversion DST-aware.
         base_utc = self.base_instant.astimezone(datetime_timezone.utc)
-        base_date = self.base_instant.astimezone().date()
+        base_date = _to_local(self.base_instant).date()
         instants: List[datetime] = []
         hour = 0
         instant = base_utc
-        while instant.astimezone().date() == base_date:
+        while _to_local(instant).date() == base_date:
             instants.append(instant)
             hour += 1
             instant = base_utc + timedelta(hours=hour)
