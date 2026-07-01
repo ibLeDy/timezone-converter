@@ -21,7 +21,7 @@ def _single_hour(argument: str) -> int:
 
 
 def _list_letter(argument: str) -> List[str]:
-    argument_set = set(argument)
+    argument_set = set(argument.lower())
     if any(not arg.isalpha() for arg in argument_set):
         raise argparse.ArgumentError(
             None,
@@ -77,6 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
         '-S',
         '--search',
         nargs='?',
+        type=str.lower,
         metavar='WORD',
         help='fuzzy search for a timezone',
     )
