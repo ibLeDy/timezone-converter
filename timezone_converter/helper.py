@@ -1,4 +1,6 @@
+from collections import Counter
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -8,17 +10,36 @@ from rich.console import Console
 from rich.table import Table
 
 
+_TIMEZONE_TRANSLATIONS: Dict[str, str] = {
+    tz.lower().split('/')[-1]: tz for tz in pytz.all_timezones
+}
+_CANONICAL_PATHS: Dict[str, str] = {tz.lower(): tz for tz in pytz.all_timezones}
+_TIMEZONE_SEGMENTS = [tz.lower().split('/')[-1] for tz in pytz.all_timezones]
+_AMBIGUOUS_SEGMENTS = {
+    segment for segment, count in Counter(_TIMEZONE_SEGMENTS).items() if count > 1
+}
+_AVAILABLE_TIMEZONES = sorted(
+    set(_TIMEZONE_TRANSLATIONS).union(
+        tz.lower()
+        for tz in pytz.all_timezones
+        if tz.lower().split('/')[-1] in _AMBIGUOUS_SEGMENTS
+    ),
+)
+
+
 class Helper:
     # Short, human-friendly names (the lowercased last path segment). When
     # several zones share a segment the last one wins, matching pytz's sort
     # order; the shadowed zones stay reachable via their full path below.
-    timezone_translations: Dict[str, str] = {
-        tz.lower().split('/')[-1]: tz for tz in pytz.all_timezones
-    }
+    timezone_translations: Dict[str, str] = _TIMEZONE_TRANSLATIONS
 
     # Every canonical name keyed by its full, lowercased path so that no zone
     # is unreachable (e.g. both Asia/Istanbul and Europe/Istanbul).
-    _canonical_paths: Dict[str, str] = {tz.lower(): tz for tz in pytz.all_timezones}
+    _canonical_paths: Dict[str, str] = _CANONICAL_PATHS
+
+    # User-facing names for list/search. Most zones keep their short friendly
+    # alias; canonical paths are added when the short alias is ambiguous.
+    available_timezones: List[str] = _AVAILABLE_TIMEZONES
 
     @classmethod
     def resolve_timezone(cls, name: str) -> Optional[str]:

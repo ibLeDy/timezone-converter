@@ -7,6 +7,12 @@ def test_translations_map_segment_to_canonical():
     assert Helper.timezone_translations['new_york'] == 'America/New_York'
 
 
+def test_available_timezones_include_short_names_and_shadowed_paths():
+    assert 'new_york' in Helper.available_timezones
+    assert 'asia/istanbul' in Helper.available_timezones
+    assert 'europe/istanbul' in Helper.available_timezones
+
+
 def test_print_with_rich_outputs(capsys):
     Helper._print_with_rich('hello world')
     assert 'hello world' in capsys.readouterr().out

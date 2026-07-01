@@ -109,6 +109,8 @@ commands =
     timezone-converter tijuana new_york
     timezone-converter tijuana new_york --single
     timezone-converter tijuana --zone
-    timezone-converter tijuana --list
-    timezone-converter tijuana --list tbd
+    timezone-converter tijuana new_york --order
+    timezone-converter --search york
+    timezone-converter --list
+    timezone-converter --list tbd
 """

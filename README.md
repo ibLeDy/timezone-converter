@@ -60,6 +60,16 @@ pip install -U timezone-converter
 timezone-converter <timezone> [<timezone> ...]
 ```
 
+Useful flags:
+
+```bash
+timezone-converter tijuana new_york --zone
+timezone-converter tijuana new_york --order
+timezone-converter tijuana --single 14
+timezone-converter --search york
+timezone-converter --list tbd
+```
+
 ### Docker
 
 ```bash
@@ -71,20 +81,38 @@ docker run --rm -t bledy/timezone-converter <timezone> [<timezone> ...]
 ### Comparison between multiple timezones
 
 Multiple timezones can be provided to get a side-by-side comparison.
+Short timezone names such as `new_york` are supported, as are canonical
+timezone paths such as `America/New_York`.
 
 ### Current hour highlighting
 
 The row containing the current hour will be highlighted.
+
+### Zone abbreviations
+
+Using the `--zone` argument, each column header will include the timezone
+abbreviation for that day, such as `PST` or `CEST`.
+
+### Ordered columns
+
+Using the `--order` argument, timezone columns will be sorted by their offset
+difference from your local timezone.
 
 ### Output a single hour
 
 Using the `--single` argument, you can output a single hour. If you don't
 provide a value, the current hour will be displayed.
 
+### Search for a timezone
+
+Using the `--search` argument, you can fuzzy-search for available timezone
+names.
+
 ### List of available timezones
 
 Using the `--list` argument, you can see a pretty list of available timezones,
 by groups, and sorted alphabetically.
+You can optionally provide letters to filter the groups that are shown.
 
 `$ timezone-converter --list`
 

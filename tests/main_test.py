@@ -22,6 +22,7 @@ def test_single_hour_invalid():
 def test_list_letter_normalizes():
     assert _list_letter('cba') == ['a', 'b', 'c']
     assert _list_letter('aab') == ['a', 'b']
+    assert _list_letter('BA') == ['a', 'b']
 
 
 def test_list_letter_rejects_digits():
@@ -34,6 +35,11 @@ def test_build_parser_defaults():
     assert args.timezone == ['tijuana']
     assert args.zone is False
     assert args.list is None
+
+
+def test_build_parser_normalizes_search():
+    args = build_parser().parse_args(['--search', 'York'])
+    assert args.search == 'york'
 
 
 def _patch_view(monkeypatch, name, method, returns=0):

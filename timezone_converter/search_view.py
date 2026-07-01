@@ -6,12 +6,12 @@ from timezone_converter.helper import Helper
 
 class SearchView(Helper):
     def __init__(self, search: str) -> None:
-        self.search = search
+        self.search = search.lower()
 
     def _search_and_sort(self, search: str) -> List[str]:
         timezones: List[str] = get_close_matches(
             search,
-            self.timezone_translations,
+            self.available_timezones,
         )
 
         if len(timezones) > 0:

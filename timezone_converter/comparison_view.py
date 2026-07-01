@@ -63,8 +63,8 @@ class ComparisonView(Helper):
         if timezone_name is None:
             error_msg = f'error: {timezone !r} is not an available timezone'
             possible_matches: List[str] = get_close_matches(
-                timezone,
-                self.timezone_translations,
+                timezone.lower(),
+                self.available_timezones,
                 n=5,
             )
             if len(possible_matches) == 0:
