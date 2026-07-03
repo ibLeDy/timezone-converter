@@ -9,7 +9,6 @@ from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
 
-
 _ALL_TIMEZONES = sorted(available_timezones())
 _TIMEZONE_TRANSLATIONS: Dict[str, str] = {
     tz.lower().split('/')[-1]: tz for tz in _ALL_TIMEZONES
