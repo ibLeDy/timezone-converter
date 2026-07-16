@@ -12,7 +12,7 @@ A CLI tool (published to PyPI as `timezone-converter`) that prints a full day of
 - Run the CLI: `timezone-converter <timezone> [<timezone> ...]` or `python -m timezone_converter.main`
 - Lint/format/type-check (all via pre-commit — black, flake8 max-line-length=88, mypy, reorder-python-imports, add-trailing-comma): `pre-commit run --all-files`
 - Full test matrix (py39–py313): `tox`. Note: tox's `[testenv] commands` runs the CLI with various args as smoke tests (see `pyproject.toml`), it does **not** run pytest. CI (`.github/workflows/integration.yml`) runs `tox` on Linux/macOS/Windows.
-- Run the tests: `pytest` (test files use the `*_test.py` suffix, enforced by the `name-tests-test` pre-commit hook). Single test: `pytest tests/comparison_view_test.py::test_name`. Coverage is configured via `covdefaults` (100% required): `coverage run -m pytest && coverage report`.
+- Run the tests: `pytest` (test files use the `*_test.py` suffix, enforced by the `name-tests-test` pre-commit hook). If globally installed pytest plugins interfere with collection, use `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest`. Single test: `pytest tests/comparison_view_test.py::test_name`. Coverage is configured via `covdefaults` (100% required): `coverage run -m pytest && coverage report`.
 
 ## Conventions
 
