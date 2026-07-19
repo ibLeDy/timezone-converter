@@ -1,34 +1,85 @@
 # AGENTS.md
 
-This file provides guidance to coding agents when working with code in this repository.
+## Project overview
 
-## What this is
+Timezone Converter is a Python 3.9+ CLI published to PyPI as
+`timezone-converter`. It renders a local calendar day beside foreign timezones
+with Rich. Its entry point is `timezone_converter.main:main`.
 
-A CLI tool (published to PyPI as `timezone-converter`) that prints a full day of the local timezone side-by-side with one or more foreign timezones, rendered with `rich`. Entry point: `timezone_converter.main:main` (declared under `[project.scripts]`).
+It supports macOS, Windows, and Linux through `zoneinfo` plus `tzdata`; avoid
+POSIX-only APIs, machine-specific paths, and shell-dependent behavior.
 
 ## Commands
 
-- Install for development: `pip install -e .` (then `requirements-dev.txt`: `pytest`, `coverage`, `covdefaults`)
-- Run the CLI: `timezone-converter <timezone> [<timezone> ...]` or `python -m timezone_converter.main`
-- Lint/format/type-check (all via pre-commit — black, flake8 max-line-length=88, mypy, reorder-python-imports, add-trailing-comma): `pre-commit run --all-files`
-- Full test matrix (py39–py313): `tox`. Note: tox's `[testenv] commands` runs the CLI with various args as smoke tests (see `pyproject.toml`), it does **not** run pytest. CI (`.github/workflows/integration.yml`) runs `tox` on Linux/macOS/Windows.
-- Run the tests: `pytest` (test files use the `*_test.py` suffix, enforced by the `name-tests-test` pre-commit hook). Single test: `pytest tests/comparison_view_test.py::test_name`. Coverage is configured via `covdefaults` (100% required): `coverage run -m pytest && coverage report`.
+- Install: `pip install -e .` and `pip install -r requirements-dev.txt`
+- Run: `timezone-converter <timezone> [<timezone> ...]` or
+  `python -m timezone_converter.main`
+- Test: `pytest`
+- Test without globally installed pytest plugins:
+  `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest`
+- Single test: `pytest tests/comparison_view_test.py::test_name`
+- Coverage: `coverage run -m pytest && coverage report` (100% required)
+- Format, lint, and type-check: `pre-commit run --all-files`
+- Python 3.9-3.13 matrix plus CLI smoke tests: `tox`
 
-## Conventions
-
-- mypy runs in strict mode (`disallow_untyped_defs`, `disallow_any_generics`, etc.) — all functions need full type annotations. Use `typing.List`/`Optional`/`Union` (not `list[...]`/`X | None`) because the minimum supported version is Python 3.9.
-- black is configured with `--skip-string-normalization`; the codebase uses single quotes. Match that.
-- Minimum Python is 3.9 — don't use newer syntax (e.g. `match`, `X | Y` type unions, `str.removeprefix` is fine but built-in generics in annotations are not).
+`tox` runs the coverage-backed test suite before the CLI smoke commands listed
+in `pyproject.toml`. CI runs that matrix on Linux, macOS, and Windows.
 
 ## Architecture
 
-Three "view" classes drive the three mutually-exclusive modes, dispatched in `main.main()` based on parsed args (`--list` → `--search` → positional `timezone` → help). Each view subclasses `Helper` and exposes a single `print_*()` method returning an `int` exit code.
+`main.main()` dispatches mutually exclusive modes in this order: `--list`,
+`--search`, positional timezone comparison, then help.
 
-- `helper.py` — `Helper` base class. Owns timezone lookup data: `timezone_translations` maps the lowercased last path segment of every `zoneinfo.available_timezones()` entry (e.g. `new_york`) to its canonical name (e.g. `America/New_York`), `_canonical_paths` preserves exact full-path lookups, `available_timezones` powers list discovery, and `searchable_timezones` powers search/suggestions. Also wraps all output via `_print_with_rich`.
-- `comparison_view.py` — `ComparisonView`: the default mode. Computes local midnight, converts it to each foreign timezone, then renders a 24-row (or single-hour) table. `--zone` adds tz abbreviation to headers, `--order` sorts columns by UTC-offset distance from local, `--single` limits to one hour, current hour is highlighted blue. Unknown timezones raise `SystemExit` after showing `difflib.get_close_matches` suggestions.
-- `list_view.py` — `ListView`: `--list [LETTERS]` renders all timezones grouped by first letter into `rich` panels.
-- `search_view.py` — `SearchView`: `--search WORD` fuzzy-matches against `searchable_timezones` via `difflib.get_close_matches`.
-- `main.py` — argparse setup (`build_parser`) and dispatch. Custom arg types `_single_hour` (validates 0–23) and `_list_letter` (alpha-only).
-- `constants.py` — `VERSION` read from installed package metadata via `importlib.metadata`.
+- `timezone_converter/main.py`: argparse, custom argument types, and dispatch.
+- `timezone_converter/helper.py`: short-name and canonical-path resolution,
+  discovery/search data, and the shared Rich output wrapper.
+- `timezone_converter/comparison_view.py`: DST-aware comparison tables.
+- `timezone_converter/list_view.py`: timezone groups for `--list`.
+- `timezone_converter/search_view.py`: fuzzy results for `--search`.
+- `timezone_converter/constants.py`: installed-package version lookup.
+- `tests/`: module-level tests; filenames must end in `*_test.py`.
 
-When adding a CLI flag: add it in `build_parser()`, dispatch in `main()`, and add a smoke-test invocation to the tox `commands` list in `pyproject.toml`.
+Each view subclasses `Helper` and exposes one `print_*()` method returning an
+integer exit code.
+
+## Timezone and CLI correctness
+
+- Build comparisons from aware instants. A local calendar day may contain 23,
+  24, or 25 real hours across DST changes; never freeze one UTC offset or use a
+  fixed `range(24)` for a complete day.
+- Add spring-forward and fall-back tests when changing date conversion, table
+  construction, ordering, single-hour selection, or current-hour highlighting.
+- Preserve short names such as `new_york` and exact canonical paths such as
+  `America/New_York`. Ambiguous short segments must remain reachable through
+  canonical paths.
+- Unknown zones must keep useful fuzzy suggestions and a nonzero exit.
+- Route normal output through `Helper._print_with_rich`. Avoid debug output,
+  prompts, network access, and machine-specific values in CLI output.
+- Manually exercise commands affected by Rich layout or styling changes. Update
+  `.github/assets/` only when its examples no longer match current output.
+
+## Python conventions
+
+- Keep Python 3.9 compatibility: use `typing.List`, `Optional`, and `Union`, not
+  built-in generic annotations, `X | Y`, or `match`.
+- Package functions require complete annotations under the strict MyPy config.
+  Do not add broad type ignores or weaken checks to accommodate a change.
+- Match Black's `--skip-string-normalization` configuration: single-quoted
+  strings and 88-character lines.
+- Import ordering, trailing commas, formatting, and test naming are enforced by
+  pre-commit; fix the underlying issue rather than bypassing a hook.
+
+## Change and release checklist
+
+When adding or changing a CLI flag, update the parser, dispatch, affected view,
+tests, README usage, and tox smoke commands together. Preserve the view exit-code
+contract.
+
+`pyproject.toml` is authoritative for metadata, dependencies, entry points,
+build contents, Python versions, and tox commands. Do not add or upgrade a
+dependency without approval. Never commit build artifacts, environments,
+caches, coverage data, or `__pycache__` files.
+
+Follow `RELEASE.md`; the static project version and GitHub release tag must
+match. Publishing a GitHub Release tests and publishes the PyPI distributions
+and multi-platform Docker image.
