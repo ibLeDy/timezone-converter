@@ -20,6 +20,14 @@ def _to_local(instant: datetime) -> datetime:
 
 
 class ComparisonView(Helper):
+    """Render a table comparing the local timezone against other zones.
+
+    Rows are built from timezone-aware UTC instants spanning the local
+    calendar day (23, 24, or 25 hours across a DST transition), so every
+    column reflects the correct offset at each instant rather than a
+    single frozen UTC offset.
+    """
+
     def __init__(
         self,
         timezones: List[str],
@@ -28,6 +36,29 @@ class ComparisonView(Helper):
         order: bool,
         difference: bool,
     ) -> None:
+        """Resolve the requested timezones and prepare the comparison state.
+
+        Parameters
+        ----------
+        timezones : List[str]
+            Foreign timezone names as given on the command line; each is
+            resolved via
+            :meth:`~timezone_converter.helper.Helper.resolve_timezone`.
+        zone : bool
+            If ``True``, include the resolved zone name (and current tz
+            abbreviation) in each column header.
+        hour : Optional[int]
+            If given, restrict the table to this single hour (0-23)
+            instead of the full local day.
+        order : bool
+            If ``True``, sort the foreign timezones by absolute offset
+            from the local timezone.
+
+        Raises
+        ------
+        SystemExit
+            If a timezone name in `timezones` cannot be resolved.
+        """
         self.zone = zone
         self.hour = hour
         self.difference = difference
@@ -156,5 +187,12 @@ class ComparisonView(Helper):
         return table
 
     def print_table(self) -> int:
+        """Print the comparison table to the console.
+
+        Returns
+        -------
+        int
+            Always ``0``.
+        """
         self._print_with_rich(self._build_table())
         return 0

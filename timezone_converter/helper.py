@@ -29,6 +29,14 @@ _SEARCHABLE_TIMEZONES = sorted(set(_AVAILABLE_TIMEZONES).union(_CANONICAL_PATHS)
 
 
 class Helper:
+    """Base class providing timezone lookup and Rich rendering for views.
+
+    Subclasses (:class:`~timezone_converter.comparison_view.ComparisonView`,
+    :class:`~timezone_converter.list_view.ListView`, and
+    :class:`~timezone_converter.search_view.SearchView`) inherit the
+    timezone name tables and helper methods defined here.
+    """
+
     # Short, human-friendly names (the lowercased last path segment). When
     # several zones share a segment the last one wins, matching sorted IANA
     # order; the shadowed zones stay reachable via their full path below.
@@ -48,6 +56,21 @@ class Helper:
 
     @classmethod
     def resolve_timezone(cls, name: str) -> Optional[str]:
+        """Resolve a user-supplied timezone name to its canonical IANA path.
+
+        Parameters
+        ----------
+        name : str
+            A timezone name as typed by the user: a short alias
+            (``new_york``), a full canonical path (``America/New_York``),
+            or any case variant of either.
+
+        Returns
+        -------
+        Optional[str]
+            The canonical IANA timezone path (e.g. ``America/New_York``),
+            or ``None`` if `name` does not match any known timezone.
+        """
         # Exact canonical paths win over the lossy short-name map so that a
         # top-level zone (e.g. Kwajalein) is not shadowed by another zone's
         # last segment (Pacific/Kwajalein).
