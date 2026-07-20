@@ -68,6 +68,7 @@ Useful flags:
 timezone-converter tijuana new_york --zone
 timezone-converter tijuana new_york --order
 timezone-converter tijuana --single 14
+timezone-converter tijuana --difference
 timezone-converter --search york
 timezone-converter --list tbd
 ```
@@ -99,6 +100,13 @@ abbreviation for that day, such as `PST` or `CEST`.
 
 Using the `--order` argument, timezone columns will be sorted by their offset
 difference from your local timezone.
+
+### Difference in hours
+
+Using the `--difference` argument, each column header will include the signed
+difference in hours from your local timezone, such as `+9.5h` or `-5h`. When
+combined with `--zone`, the difference is appended after the zone
+abbreviation, e.g. `AMERICA/TIJUANA (PST) -8h`.
 
 ### Output a single hour
 
