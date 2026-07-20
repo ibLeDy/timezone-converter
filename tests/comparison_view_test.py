@@ -258,7 +258,7 @@ def test_difference_reflects_dst_before_and_after_fall_back(local_timezone):
     assert view._get_headers()[1] == 'ASIA/CALCUTTA +10.5h'
 
 
-def test_single_hour_builds_one_row():
+def test_hour_builds_one_row():
     view = _make_view(['new_york'], hour=9)
     assert len(view._build_table().rows) == 1
 
@@ -352,7 +352,7 @@ def test_hour_zero_produces_single_row_not_full_day():
 
 
 def test_hour_twenty_three_respects_order_sorted_zones(local_timezone):
-    # Boundary regression: --single 23 is the high edge of the 00-23 range.
+    # Boundary regression: --hour 23 is the high edge of the 00-23 range.
     # Combined with --order, the single row must be built from the zones
     # list already sorted by offset distance in __init__, not the original
     # argument order.

@@ -11,12 +11,12 @@ from timezone_converter.list_view import ListView
 from timezone_converter.search_view import SearchView
 
 
-def _single_hour(argument: str) -> int:
+def _hour_value(argument: str) -> int:
     hour = int(argument)
     if hour not in range(24):
         raise argparse.ArgumentError(
             None,
-            'Value for --single must be between 00 and 23',
+            'Value for --hour must be between 00 and 23',
         )
     return hour
 
@@ -74,10 +74,10 @@ def build_parser() -> argparse.ArgumentParser:
         help='show corresponding zone name in each column',
     )
     parser.add_argument(
-        '-s',
-        '--single',
+        '-H',
+        '--hour',
         nargs='?',
-        type=_single_hour,
+        type=_hour_value,
         const=datetime.now().hour,
         metavar='HOUR',
         dest='hour',

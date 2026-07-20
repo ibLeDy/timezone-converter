@@ -67,7 +67,7 @@ Useful flags:
 ```bash
 timezone-converter tijuana new_york --zone
 timezone-converter tijuana new_york --order
-timezone-converter tijuana --single 14
+timezone-converter tijuana --hour 14
 timezone-converter tijuana --difference
 timezone-converter --search york
 timezone-converter --list tbd
@@ -110,7 +110,7 @@ abbreviation, e.g. `AMERICA/TIJUANA (PST) -8h`.
 
 ### Output a single hour
 
-Using the `--single` argument, you can output a single hour. If you don't
+Using the `--hour` argument, you can output a single hour. If you don't
 provide a value, the current hour will be displayed.
 
 ### Search for a timezone
