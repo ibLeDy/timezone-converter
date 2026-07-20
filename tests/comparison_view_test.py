@@ -179,3 +179,106 @@ def test_current_hour_row_is_highlighted():
 
 def test_print_table_returns_zero():
     assert _make_view(['new_york'], hour=9).print_table() == 0
+
+
+def test_local_day_is_complete_when_southern_hemisphere_clocks_fall_back(
+    local_timezone,
+):
+    # Regression: every fall-back test so far used a Northern Hemisphere zone
+    # that falls back in November. Australia/Sydney falls back in April; the
+    # local day must still expand to 25 hours with the repeated hour shown,
+    # proving the table isn't built around a hemisphere-specific calendar
+    # assumption.
+    zone = local_timezone('Australia/Sydney')
+    cells = _local_column((2026, 4, 5), zone)  # DST ends 03:00 -> 02:00
+    assert len(cells) == 25
+    assert cells[0] == '2026-04-05 00:00'
+    assert cells[-1] == '2026-04-05 23:00'
+    assert cells.count('2026-04-05 02:00') == 2  # repeated hour is shown
+    assert all(cell.startswith('2026-04-05') for cell in cells)
+
+
+def test_local_day_does_not_spill_for_southern_hemisphere_spring_forward(
+    local_timezone,
+):
+    # Regression companion: Sydney springs forward in October, not March; the
+    # local day must shrink to 23 hours with the skipped hour absent.
+    zone = local_timezone('Australia/Sydney')
+    cells = _local_column((2026, 10, 4), zone)  # DST starts 02:00 -> 03:00
+    assert len(cells) == 23
+    assert cells[0] == '2026-10-04 00:00'
+    assert cells[-1] == '2026-10-04 23:00'
+    assert '2026-10-04 02:00' not in cells
+    assert all(cell.startswith('2026-10-04') for cell in cells)
+
+
+def test_half_hour_dst_offset_still_yields_a_25_hour_fall_back_day(
+    local_timezone,
+):
+    # Regression: every other DST test shifts by a full hour. Australia/
+    # Lord_Howe shifts by only 30 minutes, so code that compares
+    # ``strftime('%H:%M')`` strings for an exact repeated hour (rather than
+    # walking real UTC instants) would silently mishandle it. The day is
+    # still 25 real hours long even though no single local clock time
+    # literally repeats.
+    zone = local_timezone('Australia/Lord_Howe')
+    cells = _local_column((2026, 4, 5), zone)  # offset: +11:00 -> +10:30
+    assert len(cells) == 25
+    assert cells[0] == '2026-04-05 00:00'
+    assert cells[-1] == '2026-04-05 23:30'
+    assert all(cell.startswith('2026-04-05') for cell in cells)
+
+
+def test_half_hour_dst_offset_still_yields_a_24_row_spring_forward_day(
+    local_timezone,
+):
+    # Regression companion: Lord Howe's spring-forward loses only 30 minutes,
+    # not a full hour, so the row count stays 24 instead of dropping to 23
+    # the way a full-hour spring-forward zone does. A naive "spring forward
+    # always means 23 rows" assumption would fail this.
+    zone = local_timezone('Australia/Lord_Howe')
+    cells = _local_column((2026, 10, 4), zone)  # offset: +10:30 -> +11:00
+    assert len(cells) == 24
+    assert cells[0] == '2026-10-04 00:00'
+    assert cells[-1] == '2026-10-04 23:30'
+    assert '2026-10-04 02:00' not in cells
+    assert all(cell.startswith('2026-10-04') for cell in cells)
+
+
+def test_hour_zero_produces_single_row_not_full_day():
+    # Boundary regression: hour=0 is falsy in Python, so a bug that checks
+    # ``if self.hour:`` instead of ``if self.hour is not None:`` would
+    # silently render the full day table instead of the single midnight row.
+    # Combined with --zone to also confirm the abbreviation header still
+    # reflects the base instant's DST state at the boundary.
+    view = _make_view(['new_york'], hour=0, zone=True)
+    view.base_instant = datetime(2026, 6, 1, tzinfo=ZoneInfo('America/New_York'))
+    table = view._build_table()
+    assert len(table.rows) == 1
+    assert list(table.columns[1]._cells) == ['2026-06-01 00:00']
+    assert view._get_headers()[1] == 'AMERICA/NEW_YORK (EDT)'
+
+
+def test_hour_twenty_three_respects_order_sorted_zones(local_timezone):
+    # Boundary regression: --single 23 is the high edge of the 00-23 range.
+    # Combined with --order, the single row must be built from the zones
+    # list already sorted by offset distance in __init__, not the original
+    # argument order.
+    local_timezone('Pacific/Kwajalein')  # pins local offset to UTC+12
+    view = _make_view(['calcutta', 'gmt+12'], hour=23, order=True)
+    view.base_instant = datetime(2026, 1, 15, tzinfo=datetime_timezone.utc)
+    # Asia/Calcutta (+05:30) is closer to +12:00 local than Etc/GMT+12
+    # (-12:00), so order must place it first.
+    assert view._get_headers()[1:] == ['ASIA/CALCUTTA', 'ETC/GMT+12']
+    table = view._build_table()
+    assert len(table.rows) == 1
+    assert len(table.columns) == 3
+
+
+def test_ambiguous_short_name_resolves_via_comparison_view():
+    # Regression: "istanbul" is ambiguous between Asia/Istanbul and
+    # Europe/Istanbul (helper_test.py covers resolve_timezone directly); this
+    # exercises the same resolution through the actual CLI construction path
+    # so a real, resolvable IANA zone always comes out the other end.
+    view = _make_view(['istanbul'])
+    assert str(view.zones[1]) in ('Asia/Istanbul', 'Europe/Istanbul')
