@@ -1,5 +1,3 @@
-"""Timezone name resolution and shared Rich console output for all views."""
-
 from collections import Counter
 from typing import Dict
 from typing import List

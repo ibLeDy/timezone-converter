@@ -1,5 +1,3 @@
-"""Build and render the local-vs-foreign timezone comparison table."""
-
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone as datetime_timezone

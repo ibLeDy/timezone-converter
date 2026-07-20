@@ -1,5 +1,3 @@
-"""Render the full list of available timezones, grouped by first letter."""
-
 from collections import defaultdict
 from typing import DefaultDict
 from typing import List

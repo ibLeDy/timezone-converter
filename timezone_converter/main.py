@@ -1,5 +1,3 @@
-"""Command-line entry point: argument parsing and dispatch to views."""
-
 import argparse
 import string
 from datetime import datetime
