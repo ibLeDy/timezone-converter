@@ -1,4 +1,5 @@
 import argparse
+import re
 
 import pytest
 
@@ -34,12 +35,27 @@ def test_build_parser_defaults():
     args = build_parser().parse_args(['tijuana'])
     assert args.timezone == ['tijuana']
     assert args.zone is False
+    assert args.difference is False
     assert args.list is None
+
+
+def test_build_parser_difference_flag():
+    args = build_parser().parse_args(['tijuana', '--difference'])
+    assert args.difference is True
+    args = build_parser().parse_args(['tijuana', '-d'])
+    assert args.difference is True
 
 
 def test_build_parser_normalizes_search():
     args = build_parser().parse_args(['--search', 'York'])
     assert args.search == 'york'
+
+
+def test_build_parser_version_includes_tzdata_version(capsys):
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(['--version'])
+    output = capsys.readouterr().out
+    assert re.search(r'tzdata \d', output)
 
 
 def _patch_view(monkeypatch, name, method, returns=0):

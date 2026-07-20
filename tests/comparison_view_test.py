@@ -10,8 +10,14 @@ import timezone_converter.comparison_view as comparison_view
 from timezone_converter.comparison_view import ComparisonView
 
 
-def _make_view(timezones=('new_york',), zone=False, hour=None, order=False):
-    return ComparisonView(list(timezones), zone, hour, order)
+def _make_view(
+    timezones=('new_york',),
+    zone=False,
+    hour=None,
+    order=False,
+    difference=False,
+):
+    return ComparisonView(list(timezones), zone, hour, order, difference)
 
 
 @pytest.fixture
@@ -215,6 +221,92 @@ def test_columns_share_widest_header_width_with_zone_abbreviations():
     assert len(set(rendered_widths)) == 1
 
 
+def _pin_local_offset(monkeypatch, hours):
+    real_offset = ComparisonView._offset
+
+    def fake_offset(self, zone):
+        if zone is None:
+            return timedelta(hours=hours)
+        return real_offset(self, zone)
+
+    monkeypatch.setattr(ComparisonView, '_offset', fake_offset)
+
+
+def test_headers_with_difference_shows_signed_hours(monkeypatch):
+    view = _make_view(['calcutta'], difference=True)
+    view.base_instant = datetime(2026, 1, 15, tzinfo=datetime_timezone.utc)
+    view.zones = [None, ZoneInfo('Asia/Calcutta')]
+
+    _pin_local_offset(monkeypatch, -5)
+    headers = view._get_headers()
+
+    # The difference is never shown on LOCAL: it's always +0h relative to
+    # itself, so appending it there would be redundant noise.
+    assert headers[0] == 'LOCAL'
+    assert headers[1] == 'ASIA/CALCUTTA +10.5h'
+
+
+def test_headers_with_difference_omits_trailing_zero_decimal(monkeypatch):
+    view = _make_view(['london'], difference=True)
+    view.base_instant = datetime(2026, 1, 15, tzinfo=datetime_timezone.utc)
+    view.zones = [None, ZoneInfo('Europe/London')]
+
+    _pin_local_offset(monkeypatch, -5)
+    headers = view._get_headers()
+
+    # London is UTC+0 in January; -(-5) = +5h, not "+5.0h".
+    assert headers[1] == 'EUROPE/LONDON +5h'
+
+
+def test_headers_with_zone_and_difference_appends_after_abbreviation(monkeypatch):
+    view = _make_view(['new_york'], zone=True, difference=True)
+    view.base_instant = datetime(
+        2026,
+        3,
+        8,
+        tzinfo=ZoneInfo('America/New_York'),
+    )
+    view.zones = [None, ZoneInfo('America/New_York')]
+
+    _pin_local_offset(monkeypatch, 0)
+    headers = view._get_headers()
+
+    assert headers[1] == 'AMERICA/NEW_YORK (EST) -5h'
+
+
+def test_difference_reflects_dst_before_and_after_spring_forward(local_timezone):
+    # Regression: the diff must be recomputed from the true offset at
+    # ``base_instant``, not frozen at construction time, since a zone's
+    # UTC offset (and therefore the diff) changes across a DST boundary.
+    local_timezone('America/New_York')
+    view = _make_view(['calcutta'], difference=True)
+    view.zones = [None, ZoneInfo('Asia/Calcutta')]
+
+    # Before the transition (America/New_York is still EST, UTC-5).
+    view.base_instant = datetime(2026, 3, 7, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +10.5h'
+
+    # After the transition (America/New_York is now EDT, UTC-4), the
+    # transition happens 2026-03-08 07:00 UTC.
+    view.base_instant = datetime(2026, 3, 9, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +9.5h'
+
+
+def test_difference_reflects_dst_before_and_after_fall_back(local_timezone):
+    local_timezone('America/New_York')
+    view = _make_view(['calcutta'], difference=True)
+    view.zones = [None, ZoneInfo('Asia/Calcutta')]
+
+    # Before the transition (America/New_York is still EDT, UTC-4).
+    view.base_instant = datetime(2026, 10, 31, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +9.5h'
+
+    # After the transition (America/New_York is now EST, UTC-5), the
+    # transition happens 2026-11-01 06:00 UTC.
+    view.base_instant = datetime(2026, 11, 2, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +10.5h'
+
+
 def test_single_hour_builds_one_row():
     view = _make_view(['new_york'], hour=9)
     assert len(view._build_table().rows) == 1
@@ -228,3 +320,106 @@ def test_current_hour_row_is_highlighted():
 
 def test_print_table_returns_zero():
     assert _make_view(['new_york'], hour=9).print_table() == 0
+
+
+def test_local_day_is_complete_when_southern_hemisphere_clocks_fall_back(
+    local_timezone,
+):
+    # Regression: every fall-back test so far used a Northern Hemisphere zone
+    # that falls back in November. Australia/Sydney falls back in April; the
+    # local day must still expand to 25 hours with the repeated hour shown,
+    # proving the table isn't built around a hemisphere-specific calendar
+    # assumption.
+    zone = local_timezone('Australia/Sydney')
+    cells = _local_column((2026, 4, 5), zone)  # DST ends 03:00 -> 02:00
+    assert len(cells) == 25
+    assert cells[0] == '2026-04-05 00:00'
+    assert cells[-1] == '2026-04-05 23:00'
+    assert cells.count('2026-04-05 02:00') == 2  # repeated hour is shown
+    assert all(cell.startswith('2026-04-05') for cell in cells)
+
+
+def test_local_day_does_not_spill_for_southern_hemisphere_spring_forward(
+    local_timezone,
+):
+    # Regression companion: Sydney springs forward in October, not March; the
+    # local day must shrink to 23 hours with the skipped hour absent.
+    zone = local_timezone('Australia/Sydney')
+    cells = _local_column((2026, 10, 4), zone)  # DST starts 02:00 -> 03:00
+    assert len(cells) == 23
+    assert cells[0] == '2026-10-04 00:00'
+    assert cells[-1] == '2026-10-04 23:00'
+    assert '2026-10-04 02:00' not in cells
+    assert all(cell.startswith('2026-10-04') for cell in cells)
+
+
+def test_half_hour_dst_offset_still_yields_a_25_hour_fall_back_day(
+    local_timezone,
+):
+    # Regression: every other DST test shifts by a full hour. Australia/
+    # Lord_Howe shifts by only 30 minutes, so code that compares
+    # ``strftime('%H:%M')`` strings for an exact repeated hour (rather than
+    # walking real UTC instants) would silently mishandle it. The day is
+    # still 25 real hours long even though no single local clock time
+    # literally repeats.
+    zone = local_timezone('Australia/Lord_Howe')
+    cells = _local_column((2026, 4, 5), zone)  # offset: +11:00 -> +10:30
+    assert len(cells) == 25
+    assert cells[0] == '2026-04-05 00:00'
+    assert cells[-1] == '2026-04-05 23:30'
+    assert all(cell.startswith('2026-04-05') for cell in cells)
+
+
+def test_half_hour_dst_offset_still_yields_a_24_row_spring_forward_day(
+    local_timezone,
+):
+    # Regression companion: Lord Howe's spring-forward loses only 30 minutes,
+    # not a full hour, so the row count stays 24 instead of dropping to 23
+    # the way a full-hour spring-forward zone does. A naive "spring forward
+    # always means 23 rows" assumption would fail this.
+    zone = local_timezone('Australia/Lord_Howe')
+    cells = _local_column((2026, 10, 4), zone)  # offset: +10:30 -> +11:00
+    assert len(cells) == 24
+    assert cells[0] == '2026-10-04 00:00'
+    assert cells[-1] == '2026-10-04 23:30'
+    assert '2026-10-04 02:00' not in cells
+    assert all(cell.startswith('2026-10-04') for cell in cells)
+
+
+def test_hour_zero_produces_single_row_not_full_day():
+    # Boundary regression: hour=0 is falsy in Python, so a bug that checks
+    # ``if self.hour:`` instead of ``if self.hour is not None:`` would
+    # silently render the full day table instead of the single midnight row.
+    # Combined with --zone to also confirm the abbreviation header still
+    # reflects the base instant's DST state at the boundary.
+    view = _make_view(['new_york'], hour=0, zone=True)
+    view.base_instant = datetime(2026, 6, 1, tzinfo=ZoneInfo('America/New_York'))
+    table = view._build_table()
+    assert len(table.rows) == 1
+    assert list(table.columns[1]._cells) == ['2026-06-01 00:00']
+    assert view._get_headers()[1] == 'AMERICA/NEW_YORK (EDT)'
+
+
+def test_hour_twenty_three_respects_order_sorted_zones(local_timezone):
+    # Boundary regression: --single 23 is the high edge of the 00-23 range.
+    # Combined with --order, the single row must be built from the zones
+    # list already sorted by offset distance in __init__, not the original
+    # argument order.
+    local_timezone('Pacific/Kwajalein')  # pins local offset to UTC+12
+    view = _make_view(['calcutta', 'gmt+12'], hour=23, order=True)
+    view.base_instant = datetime(2026, 1, 15, tzinfo=datetime_timezone.utc)
+    # Asia/Calcutta (+05:30) is closer to +12:00 local than Etc/GMT+12
+    # (-12:00), so order must place it first.
+    assert view._get_headers()[1:] == ['ASIA/CALCUTTA', 'ETC/GMT+12']
+    table = view._build_table()
+    assert len(table.rows) == 1
+    assert len(table.columns) == 3
+
+
+def test_ambiguous_short_name_resolves_via_comparison_view():
+    # Regression: "istanbul" is ambiguous between Asia/Istanbul and
+    # Europe/Istanbul (helper_test.py covers resolve_timezone directly); this
+    # exercises the same resolution through the actual CLI construction path
+    # so a real, resolvable IANA zone always comes out the other end.
+    view = _make_view(['istanbul'])
+    assert str(view.zones[1]) in ('Asia/Istanbul', 'Europe/Istanbul')
