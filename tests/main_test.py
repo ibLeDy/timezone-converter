@@ -1,4 +1,5 @@
 import argparse
+import re
 
 import pytest
 
@@ -40,6 +41,13 @@ def test_build_parser_defaults():
 def test_build_parser_normalizes_search():
     args = build_parser().parse_args(['--search', 'York'])
     assert args.search == 'york'
+
+
+def test_build_parser_version_includes_tzdata_version(capsys):
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(['--version'])
+    output = capsys.readouterr().out
+    assert re.search(r'tzdata \d', output)
 
 
 def _patch_view(monkeypatch, name, method, returns=0):
