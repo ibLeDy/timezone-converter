@@ -9,8 +9,14 @@ import timezone_converter.comparison_view as comparison_view
 from timezone_converter.comparison_view import ComparisonView
 
 
-def _make_view(timezones=('new_york',), zone=False, hour=None, order=False):
-    return ComparisonView(list(timezones), zone, hour, order)
+def _make_view(
+    timezones=('new_york',),
+    zone=False,
+    hour=None,
+    order=False,
+    difference=False,
+):
+    return ComparisonView(list(timezones), zone, hour, order, difference)
 
 
 @pytest.fixture
@@ -164,6 +170,90 @@ def test_headers_with_zone_include_abbreviation():
     headers = view._get_headers()
     assert headers[0].startswith('LOCAL (')
     assert headers[1] == 'AMERICA/NEW_YORK (EST)'
+
+
+def _pin_local_offset(monkeypatch, hours):
+    real_offset = ComparisonView._offset
+
+    def fake_offset(self, zone):
+        if zone is None:
+            return timedelta(hours=hours)
+        return real_offset(self, zone)
+
+    monkeypatch.setattr(ComparisonView, '_offset', fake_offset)
+
+
+def test_headers_with_difference_shows_signed_hours(monkeypatch):
+    view = _make_view(['calcutta'], difference=True)
+    view.base_instant = datetime(2026, 1, 15, tzinfo=datetime_timezone.utc)
+    view.zones = [None, ZoneInfo('Asia/Calcutta')]
+
+    _pin_local_offset(monkeypatch, -5)
+    headers = view._get_headers()
+
+    assert headers[0] == 'LOCAL +0h'
+    assert headers[1] == 'ASIA/CALCUTTA +10.5h'
+
+
+def test_headers_with_difference_omits_trailing_zero_decimal(monkeypatch):
+    view = _make_view(['london'], difference=True)
+    view.base_instant = datetime(2026, 1, 15, tzinfo=datetime_timezone.utc)
+    view.zones = [None, ZoneInfo('Europe/London')]
+
+    _pin_local_offset(monkeypatch, -5)
+    headers = view._get_headers()
+
+    # London is UTC+0 in January; -(-5) = +5h, not "+5.0h".
+    assert headers[1] == 'EUROPE/LONDON +5h'
+
+
+def test_headers_with_zone_and_difference_appends_after_abbreviation(monkeypatch):
+    view = _make_view(['new_york'], zone=True, difference=True)
+    view.base_instant = datetime(
+        2026,
+        3,
+        8,
+        tzinfo=ZoneInfo('America/New_York'),
+    )
+    view.zones = [None, ZoneInfo('America/New_York')]
+
+    _pin_local_offset(monkeypatch, 0)
+    headers = view._get_headers()
+
+    assert headers[1] == 'AMERICA/NEW_YORK (EST) -5h'
+
+
+def test_difference_reflects_dst_before_and_after_spring_forward(local_timezone):
+    # Regression: the diff must be recomputed from the true offset at
+    # ``base_instant``, not frozen at construction time, since a zone's
+    # UTC offset (and therefore the diff) changes across a DST boundary.
+    local_timezone('America/New_York')
+    view = _make_view(['calcutta'], difference=True)
+    view.zones = [None, ZoneInfo('Asia/Calcutta')]
+
+    # Before the transition (America/New_York is still EST, UTC-5).
+    view.base_instant = datetime(2026, 3, 7, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +10.5h'
+
+    # After the transition (America/New_York is now EDT, UTC-4), the
+    # transition happens 2026-03-08 07:00 UTC.
+    view.base_instant = datetime(2026, 3, 9, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +9.5h'
+
+
+def test_difference_reflects_dst_before_and_after_fall_back(local_timezone):
+    local_timezone('America/New_York')
+    view = _make_view(['calcutta'], difference=True)
+    view.zones = [None, ZoneInfo('Asia/Calcutta')]
+
+    # Before the transition (America/New_York is still EDT, UTC-4).
+    view.base_instant = datetime(2026, 10, 31, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +9.5h'
+
+    # After the transition (America/New_York is now EST, UTC-5), the
+    # transition happens 2026-11-01 06:00 UTC.
+    view.base_instant = datetime(2026, 11, 2, 12, tzinfo=datetime_timezone.utc)
+    assert view._get_headers()[1] == 'ASIA/CALCUTTA +10.5h'
 
 
 def test_single_hour_builds_one_row():
