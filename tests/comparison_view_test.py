@@ -191,7 +191,9 @@ def test_headers_with_difference_shows_signed_hours(monkeypatch):
     _pin_local_offset(monkeypatch, -5)
     headers = view._get_headers()
 
-    assert headers[0] == 'LOCAL +0h'
+    # The difference is never shown on LOCAL: it's always +0h relative to
+    # itself, so appending it there would be redundant noise.
+    assert headers[0] == 'LOCAL'
     assert headers[1] == 'ASIA/CALCUTTA +10.5h'
 
 

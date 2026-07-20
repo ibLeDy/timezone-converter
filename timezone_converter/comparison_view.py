@@ -107,7 +107,7 @@ class ComparisonView(Helper):
             if self.zone:
                 header = f'{header} ({self._convert(zone).tzname()})'
 
-            if self.difference:
+            if self.difference and zone is not None:
                 header = f'{header} {self._format_difference(zone)}'
 
             headers.append(header)
