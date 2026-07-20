@@ -116,9 +116,18 @@ class ComparisonView(Helper):
 
     def _build_table(self) -> Table:
         headers = self._get_headers()
+        # Size every column to the widest header across the whole row, not
+        # just its own content. Rich otherwise auto-sizes each column
+        # independently, so a long ``--zone`` header (e.g.
+        # ``AMERICA/NEW_YORK (EST)``) next to a short one (e.g. ``UTC (UTC)``)
+        # makes the row look inconsistently sized even though each column is
+        # centered relative to itself. ``min_width`` only sets a floor, so
+        # narrower columns grow to match without truncating wider ones or
+        # changing narrow-terminal wrapping behavior.
+        widest_header = max((len(header) for header in headers), default=0)
         table = Table()
         for header in headers:
-            table.add_column(header, justify='center')
+            table.add_column(header, justify='center', min_width=widest_header)
 
         if self.hour is not None:
             base_utc = self.base_instant.astimezone(datetime_timezone.utc)

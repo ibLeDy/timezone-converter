@@ -4,6 +4,7 @@ from datetime import timezone as datetime_timezone
 from zoneinfo import ZoneInfo
 
 import pytest
+from rich.console import Console
 
 import timezone_converter.comparison_view as comparison_view
 from timezone_converter.comparison_view import ComparisonView
@@ -164,6 +165,54 @@ def test_headers_with_zone_include_abbreviation():
     headers = view._get_headers()
     assert headers[0].startswith('LOCAL (')
     assert headers[1] == 'AMERICA/NEW_YORK (EST)'
+
+
+def test_columns_share_widest_header_width():
+    # Regression: Rich sizes each column from its own content, so a short
+    # header (e.g. "UTC") next to a long one (e.g. an exact IANA path) used
+    # to render as a narrow column beside a wide one. Every column should
+    # instead be floored to the widest header across the whole row.
+    view = _make_view(['utc', 'america/argentina/buenos_aires'])
+    view.zones = [
+        None,
+        ZoneInfo('UTC'),
+        ZoneInfo('America/Argentina/Buenos_Aires'),
+    ]
+    headers = view._get_headers()
+    widest = max(len(header) for header in headers)
+    assert widest > len('LOCAL')  # sanity: headers really do differ in length
+
+    table = view._build_table()
+    assert [column.min_width for column in table.columns] == [widest] * len(
+        headers,
+    )
+
+    console = Console(width=200)
+    rendered_widths = table._calculate_column_widths(console, console.options)
+    assert len(set(rendered_widths)) == 1
+
+
+def test_columns_share_widest_header_width_with_zone_abbreviations():
+    # Same guarantee with --zone, whose abbreviation suffix (e.g. "(-03)")
+    # makes header lengths diverge even further between columns.
+    view = _make_view(['utc', 'america/argentina/buenos_aires'], zone=True)
+    view.base_instant = datetime(2026, 7, 20, tzinfo=datetime_timezone.utc)
+    view.zones = [
+        None,
+        ZoneInfo('UTC'),
+        ZoneInfo('America/Argentina/Buenos_Aires'),
+    ]
+    headers = view._get_headers()
+    widest = max(len(header) for header in headers)
+
+    table = view._build_table()
+    assert [column.min_width for column in table.columns] == [widest] * len(
+        headers,
+    )
+
+    console = Console(width=200)
+    rendered_widths = table._calculate_column_widths(console, console.options)
+    assert len(set(rendered_widths)) == 1
 
 
 def test_single_hour_builds_one_row():
