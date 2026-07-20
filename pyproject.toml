@@ -42,6 +42,7 @@ dependencies = [
 
 [project.scripts]
 timezone-converter = "timezone_converter.main:main"
+tzconv = "timezone_converter.main:main"
 
 [project.urls]
 Homepage = "https://github.com/ibLeDy/timezone-converter"
@@ -110,7 +111,10 @@ commands =
     timezone-converter tijuana new_york --hour
     timezone-converter tijuana --zone
     timezone-converter tijuana new_york --order
+    timezone-converter tijuana --difference
+    timezone-converter tijuana --difference --zone
     timezone-converter --search york
     timezone-converter --list
     timezone-converter --list tbd
+    tzconv --version
 """

@@ -1,4 +1,5 @@
 import argparse
+import importlib.metadata
 import string
 from datetime import datetime
 from typing import List
@@ -50,11 +51,12 @@ def build_parser() -> argparse.ArgumentParser:
         metavar='LETTER',
         help='show all timezones or only those that start with specific letters',
     )
+    tzdata_version = importlib.metadata.version('tzdata')
     parser.add_argument(
         '-V',
         '--version',
         action='version',
-        version=f'%(prog)s {VERSION}',
+        version=f'%(prog)s {VERSION} (tzdata {tzdata_version})',
         help='show program\'s version number and exit',
     )
     parser.add_argument(
@@ -87,6 +89,12 @@ def build_parser() -> argparse.ArgumentParser:
         action='store_true',
         help='show timezones in order of difference',
     )
+    parser.add_argument(
+        '-d',
+        '--difference',
+        action='store_true',
+        help='show difference in hours from your local timezone in each column',
+    )
 
     return parser
 
@@ -105,6 +113,7 @@ def main() -> int:
             args.zone,
             args.hour,
             args.order,
+            args.difference,
         ).print_table()
     else:
         parser.print_help()
