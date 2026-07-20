@@ -104,10 +104,10 @@ commands =
     timezone-converter
     timezone-converter --help
     timezone-converter tijuana
-    timezone-converter tijuana --single
-    timezone-converter tijuana --single 14
+    timezone-converter tijuana --hour
+    timezone-converter tijuana --hour 14
     timezone-converter tijuana new_york
-    timezone-converter tijuana new_york --single
+    timezone-converter tijuana new_york --hour
     timezone-converter tijuana --zone
     timezone-converter tijuana new_york --order
     timezone-converter --search york

@@ -3,20 +3,20 @@ import argparse
 import pytest
 
 from timezone_converter import main as main_module
+from timezone_converter.main import _hour_value
 from timezone_converter.main import _list_letter
-from timezone_converter.main import _single_hour
 from timezone_converter.main import build_parser
 from timezone_converter.main import main
 
 
-def test_single_hour_valid():
-    assert _single_hour('0') == 0
-    assert _single_hour('23') == 23
+def test_hour_value_valid():
+    assert _hour_value('0') == 0
+    assert _hour_value('23') == 23
 
 
-def test_single_hour_invalid():
+def test_hour_value_invalid():
     with pytest.raises(argparse.ArgumentError):
-        _single_hour('24')
+        _hour_value('24')
 
 
 def test_list_letter_normalizes():

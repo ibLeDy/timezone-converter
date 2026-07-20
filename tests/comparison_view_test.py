@@ -166,7 +166,7 @@ def test_headers_with_zone_include_abbreviation():
     assert headers[1] == 'AMERICA/NEW_YORK (EST)'
 
 
-def test_single_hour_builds_one_row():
+def test_hour_builds_one_row():
     view = _make_view(['new_york'], hour=9)
     assert len(view._build_table().rows) == 1
 
