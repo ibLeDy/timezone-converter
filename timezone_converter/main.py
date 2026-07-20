@@ -32,6 +32,14 @@ def _list_letter(argument: str) -> List[str]:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line argument parser.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        Parser configured with the ``timezone``, ``--list``, ``--version``,
+        ``--zone``, ``--single``, ``--search``, and ``--order`` arguments.
+    """
     parser = argparse.ArgumentParser(
         prog='timezone-converter',
         description='Compare your local timezone with a foreign one',
@@ -100,6 +108,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Parse command-line arguments and dispatch to the requested view.
+
+    Returns
+    -------
+    int
+        Process exit code suitable for ``sys.exit``.
+    """
     returncode: Optional[int] = 0
     parser = build_parser()
     args = parser.parse_args()
