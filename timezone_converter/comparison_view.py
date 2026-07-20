@@ -26,9 +26,11 @@ class ComparisonView(Helper):
         zone: bool,
         hour: Optional[int],
         order: bool,
+        difference: bool,
     ) -> None:
         self.zone = zone
         self.hour = hour
+        self.difference = difference
 
         current_dt = datetime.now()
         self.base_instant = datetime(
@@ -85,15 +87,30 @@ class ComparisonView(Helper):
             raise SystemExit(1)
         return timezone_name
 
+    def _format_difference(self, zone: Optional[tzinfo]) -> str:
+        # Signed hours relative to the local offset, evaluated at the same
+        # ``base_instant`` used for ``--zone``'s tzname, so the two flags stay
+        # consistent across DST transitions. Zero-pad the decimal only when
+        # the difference is not a whole number (e.g. ``+9.5h`` but ``-5h``,
+        # never ``-5.0h``) to keep the format compact and predictable.
+        diff_hours = (self._offset(zone) - self._offset(None)).total_seconds() / 3600
+        if diff_hours.is_integer():
+            return f'{diff_hours:+.0f}h'
+        formatted = f'{diff_hours:+.2f}'.rstrip('0').rstrip('.')
+        return f'{formatted}h'
+
     def _get_headers(self) -> List[str]:
         headers: List[str] = []
         for zone in self.zones:
             header = 'LOCAL' if zone is None else str(zone).upper()
 
             if self.zone:
-                headers.append(f'{header} ({self._convert(zone).tzname()})')
-            else:
-                headers.append(header)
+                header = f'{header} ({self._convert(zone).tzname()})'
+
+            if self.difference and zone is not None:
+                header = f'{header} {self._format_difference(zone)}'
+
+            headers.append(header)
 
         return headers
 

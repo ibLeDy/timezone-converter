@@ -35,7 +35,15 @@ def test_build_parser_defaults():
     args = build_parser().parse_args(['tijuana'])
     assert args.timezone == ['tijuana']
     assert args.zone is False
+    assert args.difference is False
     assert args.list is None
+
+
+def test_build_parser_difference_flag():
+    args = build_parser().parse_args(['tijuana', '--difference'])
+    assert args.difference is True
+    args = build_parser().parse_args(['tijuana', '-d'])
+    assert args.difference is True
 
 
 def test_build_parser_normalizes_search():
