@@ -1,3 +1,5 @@
+"""Render the full list of available timezones, grouped by first letter."""
+
 from collections import defaultdict
 from typing import DefaultDict
 from typing import List
@@ -9,6 +11,8 @@ from timezone_converter.helper import Helper
 
 
 class ListView(Helper):
+    """Render available timezone names as Rich panels grouped by letter."""
+
     def __init__(self, letters: List[str]) -> None:
         self.letters = letters
 
@@ -32,5 +36,12 @@ class ListView(Helper):
         return Columns(panels, expand=False)
 
     def print_columns(self) -> int:
+        """Print the grouped timezone panels to the console.
+
+        Returns
+        -------
+        int
+            Always ``0``.
+        """
         self._print_with_rich(self._build_columns())
         return 0
