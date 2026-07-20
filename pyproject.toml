@@ -42,6 +42,7 @@ dependencies = [
 
 [project.scripts]
 timezone-converter = "timezone_converter.main:main"
+tzconv = "timezone_converter.main:main"
 
 [project.urls]
 Homepage = "https://github.com/ibLeDy/timezone-converter"
@@ -115,4 +116,5 @@ commands =
     timezone-converter --search york
     timezone-converter --list
     timezone-converter --list tbd
+    tzconv --version
 """

@@ -60,6 +60,8 @@ pip install -U timezone-converter
 timezone-converter <timezone> [<timezone> ...]
 ```
 
+The short alias `tzconv` also works, if you prefer less typing.
+
 Useful flags:
 
 ```bash
