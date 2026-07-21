@@ -5,6 +5,7 @@
 # table/column layout, then review the diff before committing.
 #
 # Usage: python scripts/generate_assets.py
+import inspect
 import sys
 from pathlib import Path
 from typing import List
@@ -17,6 +18,23 @@ from timezone_converter import helper
 from timezone_converter.main import main as run_main
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / '.github' / 'assets'
+
+# Rich's own SVG template only sets `viewBox`, not `width`/`height`, on the
+# root <svg> element. The previously committed assets had explicit
+# width/height (from an older Rich version), which is what lets a plain
+# <img> tag size itself correctly without CSS/JS filling in an intrinsic
+# size from the viewBox. Re-add them so the SVGs stay just as portable as
+# the ones they replace.
+_DEFAULT_SVG_FORMAT = (
+    inspect.signature(Console.export_svg).parameters['code_format'].default
+)
+_NEEDLE = 'viewBox="0 0 {width} {height}"'
+assert _NEEDLE in _DEFAULT_SVG_FORMAT, 'Rich SVG template changed shape'
+SVG_FORMAT = _DEFAULT_SVG_FORMAT.replace(
+    _NEEDLE,
+    f'width="{{width}}" height="{{height}}" {_NEEDLE}',
+    1,
+)
 
 # `width=None` measures the renderable's own natural width first and uses
 # exactly that, so tables are tightly cropped instead of padded out to a
@@ -63,7 +81,7 @@ def main() -> None:
         console = _render(argv, width)
         title = '$ timezone-converter ' + ' '.join(argv)
         out_path = ASSETS_DIR / filename
-        console.save_svg(str(out_path), title=title)
+        console.save_svg(str(out_path), title=title, code_format=SVG_FORMAT)
         print(f'wrote {out_path}')
 
 
