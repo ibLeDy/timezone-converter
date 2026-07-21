@@ -20,7 +20,7 @@
     }
 
     .terminal-2367319564-matrix {
-        font-family: Fira Code, monospace;
+        font-family: Consolas, Monaco, 'Courier New', monospace;
         font-size: 20px;
         line-height: 24.4px;
         font-variant-east-asian: full-width;

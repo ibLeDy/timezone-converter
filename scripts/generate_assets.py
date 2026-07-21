@@ -19,20 +19,35 @@ from timezone_converter.main import main as run_main
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / '.github' / 'assets'
 
-# Rich's own SVG template only sets `viewBox`, not `width`/`height`, on the
-# root <svg> element. The previously committed assets had explicit
-# width/height (from an older Rich version), which is what lets a plain
-# <img> tag size itself correctly without CSS/JS filling in an intrinsic
-# size from the viewBox. Re-add them so the SVGs stay just as portable as
-# the ones they replace.
+# Two portability fixes on top of Rich's default SVG template:
+#
+# 1. It only sets `viewBox` on the root <svg>, not width/height. The
+#    previously committed assets (an older Rich version) had explicit
+#    width/height, which some SVG consumers need for intrinsic sizing
+#    rather than deriving it from viewBox alone.
+# 2. Its rendered text uses `font-family: Fira Code, monospace`, and Fira
+#    Code is only available via a `@font-face` pointing at a CDN. Any
+#    viewer that can't load that (offline, or a sandboxed raw-file preview
+#    that blocks external requests, e.g. GitHub's own SVG file viewer)
+#    falls back to a font that may be missing Rich's box-drawing glyphs,
+#    rendering them as placeholder boxes instead of table lines. Dropping
+#    "Fira Code" from the rule that's actually used means the CDN is never
+#    even requested, so the box-drawing characters always come from
+#    whatever monospace font is actually available locally.
 _DEFAULT_SVG_FORMAT = (
     inspect.signature(Console.export_svg).parameters['code_format'].default
 )
-_NEEDLE = 'viewBox="0 0 {width} {height}"'
-assert _NEEDLE in _DEFAULT_SVG_FORMAT, 'Rich SVG template changed shape'
+_VIEWBOX_NEEDLE = 'viewBox="0 0 {width} {height}"'
+_FONT_NEEDLE = 'font-family: Fira Code, monospace;'
+assert _VIEWBOX_NEEDLE in _DEFAULT_SVG_FORMAT, 'Rich SVG template changed shape'
+assert _FONT_NEEDLE in _DEFAULT_SVG_FORMAT, 'Rich SVG template changed shape'
 SVG_FORMAT = _DEFAULT_SVG_FORMAT.replace(
-    _NEEDLE,
-    f'width="{{width}}" height="{{height}}" {_NEEDLE}',
+    _VIEWBOX_NEEDLE,
+    f'width="{{width}}" height="{{height}}" {_VIEWBOX_NEEDLE}',
+    1,
+).replace(
+    _FONT_NEEDLE,
+    "font-family: Consolas, Monaco, 'Courier New', monospace;",
     1,
 )
 
@@ -40,16 +55,13 @@ SVG_FORMAT = _DEFAULT_SVG_FORMAT.replace(
 # exactly that, so tables are tightly cropped instead of padded out to a
 # fixed canvas. `--list` renders a `Columns` grid that expands to fill
 # whatever width it's given rather than having one true natural width, so it
-# gets an explicit value instead: Rich's SVG export always renders text at a
-# fixed pixel size and README.md displays images at a fixed content width
-# (roughly 830px), so a *wider* render doesn't make the text bigger on
-# GitHub, it just gets shrunk down further to fit, becoming smaller. 160
-# columns keeps the rendered text close to its natural on-screen size there,
-# at the cost of a taller image with more rows.
+# gets an explicit value instead, chosen to keep roughly the same
+# width:height proportions as the screenshot it replaces (which was
+# ~1555x1292) rather than an extremely tall, narrow stack.
 COMMANDS: List[Tuple[str, List[str], Optional[int]]] = [
     ('tijuana_zone.svg', ['tijuana', '--zone'], None),
     ('tijuana_new_york.svg', ['tijuana', 'new_york'], None),
-    ('list.svg', ['--list'], 160),
+    ('list.svg', ['--list'], 360),
 ]
 
 
