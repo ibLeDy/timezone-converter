@@ -22,12 +22,16 @@ ASSETS_DIR = Path(__file__).resolve().parent.parent / '.github' / 'assets'
 # exactly that, so tables are tightly cropped instead of padded out to a
 # fixed canvas. `--list` renders a `Columns` grid that expands to fill
 # whatever width it's given rather than having one true natural width, so it
-# gets an explicit, deliberately wide value chosen to keep the whole
-# alphabet legible in a handful of rows instead of one tall, narrow column.
+# gets an explicit value instead: Rich's SVG export always renders text at a
+# fixed pixel size and README.md displays images at a fixed content width
+# (roughly 830px), so a *wider* render doesn't make the text bigger on
+# GitHub, it just gets shrunk down further to fit, becoming smaller. 160
+# columns keeps the rendered text close to its natural on-screen size there,
+# at the cost of a taller image with more rows.
 COMMANDS: List[Tuple[str, List[str], Optional[int]]] = [
     ('tijuana_zone.svg', ['tijuana', '--zone'], None),
     ('tijuana_new_york.svg', ['tijuana', 'new_york'], None),
-    ('list.svg', ['--list'], 360),
+    ('list.svg', ['--list'], 160),
 ]
 
 
