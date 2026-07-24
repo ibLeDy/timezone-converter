@@ -263,6 +263,52 @@ def test_hour_builds_one_row():
     assert len(view._build_table().rows) == 1
 
 
+def _hour_column(day, zone, hour):
+    year, month, day_of_month = day
+    view = _make_view(['london'], hour=hour)
+    view.base_instant = datetime(year, month, day_of_month, tzinfo=zone)
+    return list(view._build_table().columns[0]._cells)
+
+
+def test_hour_selects_local_wall_clock_hour_on_spring_forward_day(local_timezone):
+    # Regression: --hour was computed as "N real hours after local midnight"
+    # (base_utc + timedelta(hours=N)), so every hour past a spring-forward
+    # transition was rendered an hour late -- --hour 14 showed 15:00.
+    zone = local_timezone('America/New_York')
+    assert _hour_column((2026, 3, 8), zone, 14) == ['2026-03-08 14:00']
+
+
+def test_hour_selects_local_wall_clock_hour_on_fall_back_day(local_timezone):
+    # Regression companion: the same arithmetic drifted the other way after a
+    # fall-back transition -- --hour 14 showed 13:00.
+    zone = local_timezone('America/New_York')
+    assert _hour_column((2026, 11, 1), zone, 14) == ['2026-11-01 14:00']
+
+
+def test_hour_does_not_spill_into_the_next_day_on_spring_forward(local_timezone):
+    # Regression: on a 23-hour day the old arithmetic pushed --hour 23 past
+    # midnight into the following date.
+    zone = local_timezone('America/New_York')
+    assert _hour_column((2026, 3, 8), zone, 23) == ['2026-03-08 23:00']
+
+
+def test_hour_shows_both_instants_of_a_repeated_local_hour(local_timezone):
+    # A fall-back day lives through 01:00 twice; both instants are real, so
+    # both are shown, matching how the full-day table renders the repeat.
+    zone = local_timezone('America/New_York')
+    assert _hour_column((2026, 11, 1), zone, 1) == [
+        '2026-11-01 01:00',
+        '2026-11-01 01:00',
+    ]
+
+
+def test_hour_skipped_by_spring_forward_exits(local_timezone):
+    # 02:00 never happens on this date; an empty table would be misleading.
+    zone = local_timezone('America/New_York')
+    with pytest.raises(SystemExit, match='does not exist'):
+        _hour_column((2026, 3, 8), zone, 2)
+
+
 def test_current_hour_row_is_highlighted():
     view = _make_view(['new_york'])
     styles = [row.style for row in view._build_table().rows]
@@ -337,14 +383,17 @@ def test_half_hour_dst_offset_still_yields_a_24_row_spring_forward_day(
     assert all(cell.startswith('2026-10-04') for cell in cells)
 
 
-def test_hour_zero_produces_single_row_not_full_day():
+def test_hour_zero_produces_single_row_not_full_day(local_timezone):
     # Boundary regression: hour=0 is falsy in Python, so a bug that checks
     # ``if self.hour:`` instead of ``if self.hour is not None:`` would
     # silently render the full day table instead of the single midnight row.
     # Combined with --zone to also confirm the abbreviation header still
     # reflects the base instant's DST state at the boundary.
+    # ``base_instant`` is always local midnight in production, so the local
+    # zone is pinned to match it rather than left as the machine's.
+    zone = local_timezone('America/New_York')
     view = _make_view(['new_york'], hour=0, zone=True)
-    view.base_instant = datetime(2026, 6, 1, tzinfo=ZoneInfo('America/New_York'))
+    view.base_instant = datetime(2026, 6, 1, tzinfo=zone)
     table = view._build_table()
     assert len(table.rows) == 1
     assert list(table.columns[1]._cells) == ['2026-06-01 00:00']

@@ -113,6 +113,11 @@ abbreviation, e.g. `AMERICA/TIJUANA (PST) -8h`.
 Using the `--hour` argument, you can output a single hour. If you don't
 provide a value, the current hour will be displayed.
 
+The value is a local wall-clock hour, so on the days your clocks change it
+still refers to the hour you actually see on the clock. When your clocks fall
+back, the repeated hour happens twice and both instants are shown. When they
+spring forward, the skipped hour never happens, and asking for it is an error.
+
 ### Search for a timezone
 
 Using the `--search` argument, you can fuzzy-search for available timezone
