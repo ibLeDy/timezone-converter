@@ -8,3 +8,6 @@ __pycache__
 build
 dist
 test
+.coverage
+.coverage.*
+htmlcov
