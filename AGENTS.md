@@ -9,7 +9,7 @@ data comes from `zoneinfo` plus `tzdata`; avoid platform-specific behavior.
 ## Commands
 
 - Install: `pip install -e .` and `pip install -r requirements-dev.txt`
-- Run: `timezone-converter <timezone> [<timezone> ...]` or
+- Run: `timezone-converter` or `tzconv` `<timezone> [<timezone> ...]` or
   `python -m timezone_converter.main`
 - Test: `pytest` (or `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` when global
   plugins interfere)

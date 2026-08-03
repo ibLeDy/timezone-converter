@@ -8,3 +8,10 @@ __pycache__
 build
 dist
 test
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.ruff_cache/
+.dmypy.json
+.DS_Store

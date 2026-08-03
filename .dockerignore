@@ -9,4 +9,12 @@
 build
 dist
 requirements-dev.txt
-test
+tests
+docs
+AGENTS.md
+CLAUDE.md
+RELEASE.md
+.coverage
+htmlcov
+coverage.xml
+.ruff_cache
