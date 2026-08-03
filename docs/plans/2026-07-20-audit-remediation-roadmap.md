@@ -3,7 +3,7 @@
 **Status:** Proposed
 **Date:** 2026-07-20
 **Branch / worktree:** `grok/audit-fix-plans` @
-`/Users/bledy/workspace/repos/timezone-converter-audit-fix-plans`
+`/Users/bledy/workspace/worktrees/ibLeDy/timezone-converter/audit-fix-plans`
 **Source:** full repository audit (session 2026-07-20)
 
 ## Goal
