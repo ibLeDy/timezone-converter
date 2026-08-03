@@ -53,6 +53,9 @@ class ComparisonView(Helper):
         order : bool
             If ``True``, sort the foreign timezones by absolute offset
             from the local timezone.
+        difference : bool
+            If ``True``, append each foreign column's signed hour offset
+            from the local timezone to the header (e.g. ``+5h``).
 
         Raises
         ------

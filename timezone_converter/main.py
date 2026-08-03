@@ -38,7 +38,8 @@ def build_parser() -> argparse.ArgumentParser:
     -------
     argparse.ArgumentParser
         Parser configured with the ``timezone``, ``--list``, ``--version``,
-        ``--zone``, ``--single``, ``--search``, and ``--order`` arguments.
+        ``--zone``, ``--hour``, ``--search``, ``--order``, and
+        ``--difference`` arguments.
     """
     parser = argparse.ArgumentParser(
         prog='timezone-converter',
