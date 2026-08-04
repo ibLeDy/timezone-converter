@@ -33,7 +33,8 @@ integer exit codes.
   `America/New_York`, canonical access to ambiguous short names, useful fuzzy
   suggestions, and nonzero exits for unknown zones.
 - Route normal output through `Helper._print_with_rich`. Manually exercise Rich
-  layout changes and update stale `.github/assets/` examples.
+  layout changes and update stale `.github/assets/` examples with
+  `python scripts/generate_assets.py`, then review the diff before committing.
 
 ## Compatibility and coordinated changes
 
