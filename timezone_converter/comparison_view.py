@@ -48,8 +48,8 @@ class ComparisonView(Helper):
             If ``True``, include the resolved zone name (and current tz
             abbreviation) in each column header.
         hour : Optional[int]
-            If given, restrict the table to this single hour (0-23)
-            instead of the full local day.
+            If given, restrict the table to this local wall-clock hour
+            (0-23) instead of the full local day.
         order : bool
             If ``True``, sort the foreign timezones by absolute offset
             from the local timezone.
@@ -165,17 +165,38 @@ class ComparisonView(Helper):
             instant = base_utc + timedelta(hours=hour)
         return instants
 
+    def _selected_instants(self) -> List[datetime]:
+        # ``--hour N`` means "the local wall-clock hour N", which is not the
+        # same as "N real hours after local midnight". On a spring-forward day
+        # those drift apart by an hour for every hour past the transition, and
+        # on a fall-back day they drift the other way, so the hour has to be
+        # picked out of the real local day rather than computed by arithmetic.
+        instants = self._day_instants()
+        if self.hour is None:
+            return instants
+
+        # A fall-back day repeats a local hour, so this can legitimately match
+        # twice; both instants are shown, matching the full-day table.
+        matching = [
+            instant for instant in instants if _to_local(instant).hour == self.hour
+        ]
+        if not matching:
+            # A spring-forward day skips a local hour entirely; there is no
+            # instant to show, so say so instead of rendering an empty table.
+            raise SystemExit(
+                f'error: {self.hour:02d}:00 does not exist on '
+                f'{_to_local(self.base_instant).date()} in your local timezone, '
+                'the clocks skip forward over it',
+            )
+        return matching
+
     def _build_table(self) -> Table:
         headers = self._get_headers()
         table = Table()
         for header in headers:
             table.add_column(header, justify='center')
 
-        if self.hour is not None:
-            base_utc = self.base_instant.astimezone(datetime_timezone.utc)
-            instants: List[datetime] = [base_utc + timedelta(hours=self.hour)]
-        else:
-            instants = self._day_instants()
+        instants = self._selected_instants()
 
         fmt = '%Y-%m-%d %H:%M'
         now = datetime.now().astimezone()
