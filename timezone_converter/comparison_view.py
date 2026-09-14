@@ -10,13 +10,17 @@ from zoneinfo import ZoneInfo
 from rich.table import Table
 
 from timezone_converter.helper import Helper
+from timezone_converter.helper import local_timezone
 
 
 def _to_local(instant: datetime) -> datetime:
-    # Single seam for the machine-local conversion. Production uses the
-    # no-argument ``astimezone`` so it tracks DST; tests monkeypatch this to
-    # pin a specific zone across platforms (``time.tzset`` is POSIX only).
-    return instant.astimezone()
+    # Single seam for the machine-local conversion. ``TZ`` wins when it names
+    # an IANA zone, so containers (which have no timezone of their own) get a
+    # meaningful LOCAL column; otherwise the no-argument ``astimezone`` tracks
+    # the machine's own zone, including DST. Tests monkeypatch this to pin a
+    # specific zone across platforms (``time.tzset`` is POSIX only).
+    zone = local_timezone()
+    return instant.astimezone() if zone is None else instant.astimezone(zone)
 
 
 class ComparisonView(Helper):
@@ -66,12 +70,25 @@ class ComparisonView(Helper):
         self.hour = hour
         self.difference = difference
 
-        current_dt = datetime.now()
-        self.base_instant = datetime(
-            current_dt.year,
-            current_dt.month,
-            current_dt.day,
-        ).astimezone()
+        # ``base_instant`` has to be midnight in the same zone ``_to_local``
+        # renders, or the table would be built around a different day than the
+        # one it displays. Both consult ``TZ`` the same way.
+        local_zone = local_timezone()
+        if local_zone is None:
+            current_dt = datetime.now()
+            self.base_instant = datetime(
+                current_dt.year,
+                current_dt.month,
+                current_dt.day,
+            ).astimezone()
+        else:
+            current_dt = datetime.now(local_zone)
+            self.base_instant = datetime(
+                current_dt.year,
+                current_dt.month,
+                current_dt.day,
+                tzinfo=local_zone,
+            )
 
         # ``None`` represents the local timezone; it is rendered with the
         # no-argument ``astimezone`` so it tracks DST at each instant.

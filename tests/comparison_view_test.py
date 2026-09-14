@@ -374,3 +374,31 @@ def test_ambiguous_short_name_resolves_via_comparison_view():
     # so a real, resolvable IANA zone always comes out the other end.
     view = _make_view(['istanbul'])
     assert str(view.zones[1]) in ('Asia/Istanbul', 'Europe/Istanbul')
+
+
+def test_tz_environment_variable_drives_the_local_column(monkeypatch):
+    # Regression: containers have no timezone of their own, so the LOCAL
+    # column fell back to UTC. TZ now names the local zone directly, resolved
+    # through zoneinfo so it works without the OS timezone database.
+    monkeypatch.setenv('TZ', 'Europe/Madrid')
+    view = _make_view(['new_york'], zone=True, hour=12)
+    assert view._get_headers()[0] == 'LOCAL (CEST)'
+    view.base_instant = datetime(2026, 6, 1, tzinfo=ZoneInfo('Europe/Madrid'))
+    assert list(view._build_table().columns[0]._cells) == ['2026-06-01 12:00']
+
+
+def test_tz_environment_variable_sets_base_instant_to_local_midnight(monkeypatch):
+    # base_instant must be midnight in the zone the table renders, otherwise
+    # the day walked and the day displayed disagree.
+    monkeypatch.setenv('TZ', 'Pacific/Kiritimati')  # UTC+14, a day ahead of UTC
+    base = _make_view(['new_york']).base_instant
+    assert (base.hour, base.minute) == (0, 0)
+    assert base.utcoffset() == timedelta(hours=14)
+    assert base.date() == datetime.now(ZoneInfo('Pacific/Kiritimati')).date()
+
+
+def test_unresolvable_tz_leaves_the_machine_timezone_in_charge(monkeypatch):
+    # A POSIX rule string is valid for the C library but not for zoneinfo;
+    # the view must still build rather than fail on it.
+    monkeypatch.setenv('TZ', 'CET-1CEST,M3.5.0,M10.5.0/3')
+    assert _make_view(['new_york'], hour=12).print_table() == 0

@@ -1,9 +1,13 @@
+import os
 from collections import Counter
+from datetime import tzinfo
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
 from zoneinfo import available_timezones
+from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfoNotFoundError
 
 from rich.columns import Columns
 from rich.console import Console
@@ -26,6 +30,37 @@ _AVAILABLE_TIMEZONES = sorted(
     ),
 )
 _SEARCHABLE_TIMEZONES = sorted(set(_AVAILABLE_TIMEZONES).union(_CANONICAL_PATHS))
+
+
+def local_timezone() -> Optional[tzinfo]:
+    """Resolve the local timezone from the ``TZ`` environment variable.
+
+    Containers and CI runners usually have no timezone of their own, so ``TZ``
+    is the conventional way to tell them one. Resolving it through
+    :mod:`zoneinfo` rather than the C library keeps the result identical on
+    every platform: the C library needs the operating system's copy of the
+    timezone database, which slim container images often omit and Windows does
+    not have at all, and when that lookup fails it silently reinterprets a name
+    like ``Europe/Madrid`` as a POSIX rule, yielding a zone abbreviated
+    ``Europe`` at UTC+0 instead of an error.
+
+    Returns
+    -------
+    Optional[tzinfo]
+        The zone named by ``TZ``, or ``None`` when ``TZ`` is unset or does not
+        name an IANA zone, meaning the platform's own local timezone should be
+        used. Falling back covers the POSIX rule strings that ``TZ`` also
+        accepts (``CET-1CEST,M3.5.0,M10.5.0/3``), which the C library
+        understands and :mod:`zoneinfo` does not.
+    """
+    # POSIX allows a leading colon before the zone name, as in ``:Europe/Madrid``.
+    name = os.environ.get('TZ', '').strip().removeprefix(':')
+    if not name:
+        return None
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        return None
 
 
 class Helper:

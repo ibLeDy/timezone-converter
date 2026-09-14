@@ -32,6 +32,12 @@ integer exit codes.
 - Preserve short names such as `new_york`, exact paths such as
   `America/New_York`, canonical access to ambiguous short names, useful fuzzy
   suggestions, and nonzero exits for unknown zones.
+- The local timezone comes from `helper.local_timezone()`: `TZ` wins when it
+  names an IANA zone, otherwise the platform's own zone does. Resolve it via
+  `zoneinfo`, never the C library, which needs the OS timezone database that
+  slim images omit and Windows lacks, and silently reads `Europe/Madrid` as a
+  POSIX rule at UTC+0 when that lookup fails. `base_instant` and `_to_local`
+  must always agree on that zone.
 - Route normal output through `Helper._print_with_rich`. Manually exercise Rich
   layout changes and update stale `.github/assets/` examples.
 

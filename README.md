@@ -76,10 +76,29 @@ timezone-converter --list tbd
 ### Docker
 
 ```bash
-docker run --rm -t bledy/timezone-converter <timezone> [<timezone> ...]
+docker run --rm -t -e TZ=Europe/Madrid bledy/timezone-converter <timezone> [<timezone> ...]
 ```
 
+A container has no timezone of its own, so without `-e TZ` the `LOCAL` column
+is UTC. See [Local timezone](#local-timezone) below.
+
 ## Features
+
+### Local timezone
+
+The `LOCAL` column uses your system timezone. Set the `TZ` environment
+variable to override it, which is how you give a container, a CI runner, or a
+Windows shell a meaningful local timezone:
+
+```bash
+TZ=Europe/Madrid timezone-converter new_york
+```
+
+`TZ` is read with the same timezone database the rest of the tool uses, so an
+IANA name such as `Europe/Madrid` resolves identically on every platform, and
+on minimal container images that ship no system timezone data. If `TZ` is
+unset, or holds something that is not an IANA name (such as a POSIX rule
+string like `CET-1CEST,M3.5.0,M10.5.0/3`), your system timezone is used.
 
 ### Comparison between multiple timezones
 
