@@ -26,14 +26,27 @@ must match that version exactly, either as `X.Y.Z` or `vX.Y.Z`.
 ## Automated publishing
 
 Publishing the GitHub Release triggers `.github/workflows/deployment.yml`.
-That workflow:
+That workflow runs three jobs in order, each one gating the next:
 
-- validates the release tag against `pyproject.toml`;
-- targets the `release` GitHub Actions environment;
-- runs the test suite;
-- builds the wheel and source distribution;
-- publishes to PyPI with trusted publishing;
-- builds and pushes Docker images for `linux/amd64` and `linux/arm64`.
+1. `test` validates the release tag against `pyproject.toml` and runs the
+   test suite with coverage.
+2. `docker` builds a `linux/amd64` image, loads it, and smoke-tests the
+   packaged CLI entrypoint (`--version`, a comparison, and `--list`) before
+   building and pushing the multi-arch `linux/amd64` and `linux/arm64`
+   images. Targets the `release` environment.
+3. `pypi` builds the wheel and source distribution and publishes to PyPI
+   with trusted publishing. Targets the `release` environment, and needs
+   `docker` to have succeeded.
+
+PyPI publishing goes last deliberately: a PyPI release cannot be taken back,
+since a yanked version still burns that version number, whereas a Docker tag
+can be replaced. The cost of that ordering is that a Docker Hub outage blocks
+the PyPI publish. To release anyway, re-run the workflow once Docker Hub
+recovers.
+
+Both `docker` and `pypi` target the `release` environment because each needs
+its own credentials from it. If you add manual approval to that environment,
+expect to approve twice per release.
 
 Docker Hub receives these tags for non-prerelease semver releases:
 
