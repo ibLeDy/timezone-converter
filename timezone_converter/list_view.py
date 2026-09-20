@@ -12,6 +12,15 @@ class ListView(Helper):
     """Render available timezone names as Rich panels grouped by letter."""
 
     def __init__(self, letters: List[str]) -> None:
+        """Store the initial letters whose timezone groups should be shown.
+
+        Parameters
+        ----------
+        letters : List[str]
+            Lowercase single-character group keys, as produced by
+            ``main._list_letter``; every available timezone whose name
+            starts with one of them is included.
+        """
         self.letters = letters
 
     def _sort_and_group(self) -> DefaultDict[str, List[str]]:

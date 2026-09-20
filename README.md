@@ -71,6 +71,7 @@ timezone-converter tijuana --hour 14
 timezone-converter tijuana --difference
 timezone-converter --search york
 timezone-converter --list tbd
+timezone-converter --version
 ```
 
 ### Docker
@@ -122,6 +123,12 @@ spring forward, the skipped hour never happens, and asking for it is an error.
 
 Using the `--search` argument, you can fuzzy-search for available timezone
 names.
+
+### Version information
+
+Using the `--version` argument, you can see the installed package version
+along with the version of the `tzdata` database it is resolving timezones
+against, e.g. `timezone-converter X.Y.Z (tzdata 2026.4)`.
 
 ### List of available timezones
 
