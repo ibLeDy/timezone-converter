@@ -104,20 +104,24 @@ class ComparisonView(Helper):
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.resolve_timezone(timezone)
         if timezone_name is None:
+            # One shape for every failure here: the message always goes
+            # through Rich on stderr, and the exit is always ``SystemExit(1)``.
+            # ``SystemExit(str)`` would print the message itself and exit 1 as
+            # well, but bypasses Rich and leaves two different code paths for
+            # what is one error.
             error_msg = f'error: {timezone !r} is not an available timezone'
+            self._print_error_with_rich(error_msg)
             possible_matches: List[str] = get_close_matches(
                 timezone.lower(),
                 self.searchable_timezones,
                 n=5,
             )
-            if len(possible_matches) == 0:
-                raise SystemExit(error_msg)
-            table = Table()
-            table.add_column('Closest matches')
-            for match in possible_matches:
-                table.add_row(match)
-            self._print_with_rich(error_msg)
-            self._print_with_rich(table)
+            if possible_matches:
+                table = Table()
+                table.add_column('Closest matches')
+                for match in possible_matches:
+                    table.add_row(match)
+                self._print_error_with_rich(table)
             raise SystemExit(1)
         return timezone_name
 
@@ -183,11 +187,12 @@ class ComparisonView(Helper):
         if not matching:
             # A spring-forward day skips a local hour entirely; there is no
             # instant to show, so say so instead of rendering an empty table.
-            raise SystemExit(
+            self._print_error_with_rich(
                 f'error: {self.hour:02d}:00 does not exist on '
                 f'{_to_local(self.base_instant).date()} in your local timezone, '
                 'the clocks skip forward over it',
             )
+            raise SystemExit(1)
         return matching
 
     def _build_table(self) -> Table:
