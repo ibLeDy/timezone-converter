@@ -9,7 +9,7 @@ Releases before `1.0.0` are not backfilled here; see the
 [GitHub releases](https://github.com/ibLeDy/timezone-converter/releases) for
 their notes.
 
-## [1.0.0] - unreleased
+## [1.0.0] - 2026-09-20
 
 First stable release. Everything below has been sitting on `main` since
 `v0.16.1` without being published, so this is the release that actually ships
