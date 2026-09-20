@@ -34,6 +34,13 @@ the move of error output from stdout to stderr.
   `timezone-converter 1.0.0 (tzdata 2026.4)`, so a timezone-data question can
   be answered without inspecting the environment.
 - NumPy-style docstrings across the public API.
+- `python -m timezone_converter` now works. Only the longer
+  `python -m timezone_converter.main` did before; both are supported.
+- A `py.typed` marker (PEP 561) ships in the wheel and sdist, so the
+  `Typing :: Typed` classifier is true and type checkers actually use the
+  package's annotations instead of treating it as untyped.
+- A `dev` extra, so `pip install -e ".[dev]"` installs the development
+  dependencies that previously only existed in `requirements-dev.txt`.
 - `scripts/generate_assets.py`, which regenerates the README screenshots
   under `.github/assets/` by replaying the documented CLI commands, so they
   can no longer silently drift from real output.
