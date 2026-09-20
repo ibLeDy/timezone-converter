@@ -8,6 +8,14 @@ class SearchView(Helper):
     """Fuzzy-match a search term against the available timezone names."""
 
     def __init__(self, search: str) -> None:
+        """Store the term to fuzzy-match against the known timezone names.
+
+        Parameters
+        ----------
+        search : str
+            The word to search for; lowercased here so lookups are
+            case-insensitive regardless of how it was typed.
+        """
         self.search = search.lower()
 
     def _search_and_sort(self, search: str) -> List[str]:
