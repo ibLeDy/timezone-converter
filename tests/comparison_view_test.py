@@ -49,14 +49,29 @@ def test_resolves_valid_timezone_to_canonical_zone():
     assert str(view.zones[1]) == 'America/New_York'
 
 
-def test_unknown_timezone_with_suggestions_exits():
-    with pytest.raises(SystemExit):
+def test_unknown_timezone_with_suggestions_exits(capsys):
+    with pytest.raises(SystemExit) as exit_info:
         _make_view(['new_yrk'])
 
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert 'not an available timezone' in captured.err
+    assert 'Closest matches' in captured.err
+    assert captured.out == ''
 
-def test_unknown_timezone_without_suggestions_exits():
-    with pytest.raises(SystemExit):
+
+def test_unknown_timezone_without_suggestions_exits(capsys):
+    # Same contract as the suggestions path: Rich, stderr, SystemExit(1).
+    # This branch used to raise SystemExit(str), which exits 1 too but
+    # prints the message itself, bypassing Rich.
+    with pytest.raises(SystemExit) as exit_info:
         _make_view(['zzzzzzzzzz'])
+
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert 'not an available timezone' in captured.err
+    assert 'Closest matches' not in captured.err
+    assert captured.out == ''
 
 
 def test_base_instant_is_local_midnight_today(monkeypatch):
@@ -302,11 +317,17 @@ def test_hour_shows_both_instants_of_a_repeated_local_hour(local_timezone):
     ]
 
 
-def test_hour_skipped_by_spring_forward_exits(local_timezone):
+def test_hour_skipped_by_spring_forward_exits(local_timezone, capsys):
     # 02:00 never happens on this date; an empty table would be misleading.
+    # Same error contract as an unknown timezone: Rich, stderr, SystemExit(1).
     zone = local_timezone('America/New_York')
-    with pytest.raises(SystemExit, match='does not exist'):
+    with pytest.raises(SystemExit) as exit_info:
         _hour_column((2026, 3, 8), zone, 2)
+
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert 'does not exist' in captured.err
+    assert captured.out == ''
 
 
 def test_current_hour_row_is_highlighted():

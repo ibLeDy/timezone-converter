@@ -15,8 +15,10 @@ First stable release. Everything below has been sitting on `main` since
 `v0.16.1` without being published, so this is the release that actually ships
 it.
 
-**Upgrading from `0.16.1`:** there are two breaking changes, both around
-`--hour`. Read *Removed* and *Fixed* below before upgrading a script.
+**Upgrading from `0.16.1`:** every entry marked **Breaking** below matters if
+you script against this tool. Two of them are about `--hour`; the rest are
+cases where the CLI used to succeed quietly and now reports an error, plus
+the move of error output from stdout to stderr.
 
 ### Added
 
@@ -51,6 +53,21 @@ it.
   `Development Status :: 5 - Production/Stable`. The CLI surface documented
   in the README is now considered stable; flags will not be renamed or
   removed again without a major version bump.
+- **Breaking:** `--list`, `--search` and timezone arguments are now mutually
+  exclusive. Combining them used to let the dispatch order silently pick a
+  winner — `--list` beat `--search`, which beat a comparison — and still exit
+  `0`. Combining them is now an argparse error with exit code `2`.
+- **Breaking:** a bare `--search` with no word is now an argparse error with
+  exit code `2`. It used to print the help text and exit `0`, which reads
+  like success.
+- **Breaking:** error output moves from stdout to stderr. An unknown timezone
+  printed its message, and its table of closest matches, to stdout, so a
+  redirected or piped run captured the error as if it were results. Errors
+  now go through Rich on stderr and always exit `1`.
+- `--hour` and `--list` report invalid values as ordinary argparse errors,
+  e.g. `argument -H/--hour: Value for --hour must be between 00 and 23`. A
+  non-numeric `--hour` now says so instead of reporting an
+  `invalid _hour_value value`.
 
 ### Removed
 
@@ -62,6 +79,11 @@ it.
 
 ### Fixed
 
+- `--version` no longer depends on `tzdata` being installed. The version was
+  resolved while building the argument parser, so a missing distribution
+  raised `PackageNotFoundError` before any argument could be parsed, taking
+  the whole CLI down. Versions are now resolved only when `--version` is
+  used, and an absent distribution reports `unknown`.
 - **Breaking:** `--hour N` now selects the local **wall-clock** hour `N`
   instead of the instant `N` real hours after local midnight. The two are the
   same on ordinary 24-hour days and differ only across a DST transition,
