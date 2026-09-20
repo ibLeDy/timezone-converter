@@ -46,3 +46,15 @@ integer exit codes.
   usage, and tox smoke commands together. Preserve view exit-code contracts.
 - Follow `RELEASE.md` for releases; the project version and release tag must
   match.
+
+## CI
+
+`integration.yml` runs the `tox` matrix on pushes to `main` and on pull
+requests targeting `main`. It no longer triggers on `develop`: that branch
+is fully merged into `main` and has had no unique commits since January
+2025, so the trigger only ever produced duplicate runs. Restore it in
+`integration.yml` if `develop` is ever revived.
+
+`deployment.yml` runs on a published release; see `RELEASE.md` for its job
+order. Dependabot tracks GitHub Actions weekly and pip monthly, and
+pre-commit.ci opens its own monthly hook autoupdate.
