@@ -1,0 +1,77 @@
+# Changelog
+
+All notable user-facing changes to this project are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Releases before `1.0.0` are not backfilled here; see the
+[GitHub releases](https://github.com/ibLeDy/timezone-converter/releases) for
+their notes.
+
+## [1.0.0] - unreleased
+
+First stable release. Everything below has been sitting on `main` since
+`v0.16.1` without being published, so this is the release that actually ships
+it.
+
+**Upgrading from `0.16.1`:** there are two breaking changes, both around
+`--hour`. Read *Removed* and *Fixed* below before upgrading a script.
+
+### Added
+
+- `tzconv` as a short console-script alias for `timezone-converter`. Both
+  entry points are installed and behave identically.
+- `--difference` / `-d`, which appends each foreign column's signed hour
+  offset from your local timezone to its header, such as `+9.5h` or `-5h`.
+  Combined with `--zone` the difference follows the abbreviation, e.g.
+  `AMERICA/TIJUANA (PST) -8h`. The `LOCAL` column is excluded, since its
+  offset from itself is always zero.
+- `--version` now reports the version of the installed `tzdata` database
+  alongside the package version, e.g.
+  `timezone-converter 1.0.0 (tzdata 2026.4)`, so a timezone-data question can
+  be answered without inspecting the environment.
+- NumPy-style docstrings across the public API.
+- `scripts/generate_assets.py`, which regenerates the README screenshots
+  under `.github/assets/` by replaying the documented CLI commands, so they
+  can no longer silently drift from real output.
+- Expanded DST and edge-case regression tests, including spring-forward and
+  fall-back coverage for table construction and hour selection.
+
+### Changed
+
+- The PyPI classifier moves from `Development Status :: 4 - Beta` to
+  `Development Status :: 5 - Production/Stable`. The CLI surface documented
+  in the README is now considered stable; flags will not be renamed or
+  removed again without a major version bump.
+
+### Removed
+
+- **Breaking:** `--single` / `-s` has been renamed to `--hour` / `-H`. The
+  behavior of the flag is otherwise unchanged. If you script against this
+  tool, replace `--single` with `--hour` and `-s` with `-H`; the old spelling
+  is gone rather than deprecated, so it now fails with an argparse error
+  instead of silently doing something else.
+
+### Fixed
+
+- **Breaking:** `--hour N` now selects the local **wall-clock** hour `N`
+  instead of the instant `N` real hours after local midnight. The two are the
+  same on ordinary 24-hour days and differ only across a DST transition,
+  where the old arithmetic was simply wrong — on a spring-forward day every
+  hour past the transition rendered an hour late (`--hour 14` showed
+  `15:00`) and `--hour 23` could spill into the next date, while a fall-back
+  day drifted the other way. Two consequences worth knowing:
+  - A local hour that **happens twice** (fall back) now prints both instants,
+    matching how the full-day table renders the repeat.
+  - A local hour that **never happens** (spring forward) now exits non-zero
+    with an explanation instead of printing an empty table.
+
+### Notes
+
+- Installation and Docker usage are unchanged: `pip install -U
+  timezone-converter`, or `docker run --rm -t bledy/timezone-converter
+  <timezone> [<timezone> ...]`.
+- The comparison table already spanned the real local day (23, 24, or 25
+  hours) across DST changes as of `v0.16.1`; `1.0.0` extends that same
+  correctness to single-hour selection.

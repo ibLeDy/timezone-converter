@@ -6,6 +6,8 @@ must match that version exactly, either as `X.Y.Z` or `vX.Y.Z`.
 ## Before creating the release
 
 - Update `project.version` in `pyproject.toml`.
+- Update `CHANGELOG.md`: give the section for this version its release date,
+  and make sure every user-facing change since the last release is listed.
 - Update user-facing docs when behavior or CLI flags changed.
 - When adding a CLI flag, add a smoke-test invocation to the tox `commands`
   list in `pyproject.toml`.
@@ -18,7 +20,8 @@ must match that version exactly, either as `X.Y.Z` or `vX.Y.Z`.
 
 - Commit the release changes.
 - Tag the commit with the matching version, for example `v0.15.0`.
-- Create and publish a GitHub Release from that tag.
+- Create and publish a GitHub Release from that tag, using that version's
+  `CHANGELOG.md` section as the release body.
 
 ## Automated publishing
 
