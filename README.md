@@ -74,6 +74,9 @@ timezone-converter --list tbd
 timezone-converter --version
 ```
 
+`--list`, `--search`, and comparing timezones are three separate modes, so
+only one of them can be used at a time.
+
 ### Docker
 
 ```bash
