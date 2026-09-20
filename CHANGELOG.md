@@ -9,6 +9,16 @@ Releases before `1.0.0` are not backfilled here; see the
 [GitHub releases](https://github.com/ibLeDy/timezone-converter/releases) for
 their notes.
 
+## [Unreleased]
+
+### Added
+
+- `--date YYYY-MM-DD` / `-D`, to compare a local calendar day other than
+  today. The day is built from that date's own timezone rules, so a past or
+  future DST transition day still shows its real 23 or 25 hours rather than
+  today's offset applied to another date. Combines with `--hour`, which
+  still means the wall-clock hour on the chosen day.
+
 ## [1.0.0] - unreleased
 
 First stable release. Everything below has been sitting on `main` since

@@ -1,3 +1,4 @@
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone as datetime_timezone
@@ -15,8 +16,9 @@ def _make_view(
     hour=None,
     order=False,
     difference=False,
+    day=None,
 ):
-    return ComparisonView(list(timezones), zone, hour, order, difference)
+    return ComparisonView(list(timezones), zone, hour, order, difference, day)
 
 
 @pytest.fixture
@@ -271,6 +273,64 @@ def test_difference_reflects_dst_before_and_after_fall_back(local_timezone):
     # transition happens 2026-11-01 06:00 UTC.
     view.base_instant = datetime(2026, 11, 2, 12, tzinfo=datetime_timezone.utc)
     assert view._get_headers()[1] == 'ASIA/CALCUTTA +10.5h'
+
+
+def test_date_sets_the_compared_day_to_local_midnight():
+    view = _make_view(['london'], day=date(2026, 3, 8))
+    assert view.base_instant.timetuple()[:5] == (2026, 3, 8, 0, 0)
+    assert view.base_instant.tzinfo is not None
+
+
+def test_no_date_compares_today():
+    view = _make_view(['london'])
+    assert view.base_instant.date() == datetime.now().date()
+
+
+# The constructor builds local midnight with the machine's own timezone,
+# which tests cannot pin portably (``time.tzset`` is POSIX only). Attaching
+# the pinned zone to the instant the constructor produced keeps the wall
+# clock it derived from ``day`` while making the zone deterministic, so
+# these still exercise the value that ``--date`` passed in.
+def _view_for_day(local_timezone, day):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['london'], day=day)
+    view.base_instant = view.base_instant.replace(tzinfo=zone)
+    return view
+
+
+def test_date_on_a_spring_forward_day_builds_a_23_hour_table(local_timezone):
+    view = _view_for_day(local_timezone, date(2026, 3, 8))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 23
+    assert all(cell.startswith('2026-03-08') for cell in cells)
+
+
+def test_date_on_a_fall_back_day_builds_a_25_hour_table(local_timezone):
+    view = _view_for_day(local_timezone, date(2026, 11, 1))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 25
+    assert all(cell.startswith('2026-11-01') for cell in cells)
+
+
+def test_date_combines_with_hour_selection(local_timezone):
+    # --date picks the day, --hour picks the wall-clock hour within it; the
+    # spring-forward gap still has to be reported rather than rendered empty.
+    view = _view_for_day(local_timezone, date(2026, 3, 8))
+    view.hour = 14
+    assert list(view._build_table().columns[0]._cells) == ['2026-03-08 14:00']
+
+
+def test_date_on_a_spring_forward_day_still_rejects_the_skipped_hour(
+    local_timezone,
+    capsys,
+):
+    view = _view_for_day(local_timezone, date(2026, 3, 8))
+    view.hour = 2
+    with pytest.raises(SystemExit) as exit_info:
+        view._build_table()
+
+    assert exit_info.value.code == 1
+    assert 'does not exist' in capsys.readouterr().err
 
 
 def test_hour_builds_one_row():

@@ -1,3 +1,4 @@
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone as datetime_timezone
@@ -35,6 +36,7 @@ class ComparisonView(Helper):
         hour: Optional[int],
         order: bool,
         difference: bool,
+        day: Optional[date] = None,
     ) -> None:
         """Resolve the requested timezones and prepare the comparison state.
 
@@ -56,6 +58,8 @@ class ComparisonView(Helper):
         difference : bool
             If ``True``, append each foreign column's signed hour offset
             from the local timezone to the header (e.g. ``+5h``).
+        day : Optional[date]
+            The local calendar day to compare. Defaults to today.
 
         Raises
         ------
@@ -66,11 +70,15 @@ class ComparisonView(Helper):
         self.hour = hour
         self.difference = difference
 
-        current_dt = datetime.now()
+        # Local midnight of the day being compared. ``astimezone`` on a naive
+        # datetime resolves it against the local rules in force at that
+        # instant, so a past or future date gets that date's offset rather
+        # than today's.
+        chosen_day = day if day is not None else datetime.now().date()
         self.base_instant = datetime(
-            current_dt.year,
-            current_dt.month,
-            current_dt.day,
+            chosen_day.year,
+            chosen_day.month,
+            chosen_day.day,
         ).astimezone()
 
         # ``None`` represents the local timezone; it is rendered with the
