@@ -141,4 +141,6 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    exit(main())
+    # ``SystemExit`` rather than ``exit()``: the latter is installed by the
+    # ``site`` module and is missing under ``python -S``.
+    raise SystemExit(main())
