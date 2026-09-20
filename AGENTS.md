@@ -16,7 +16,7 @@ data comes from `zoneinfo` plus `tzdata`; avoid platform-specific behavior.
   plugins interfere)
 - Required coverage: `coverage run -m pytest && coverage report` (100%)
 - All hooks: `pre-commit run --all-files`
-- Python 3.9-3.13 matrix and CLI smoke tests: `tox`
+- Python 3.9-3.14 matrix and CLI smoke tests: `tox`
 
 `tox` runs coverage-backed tests and the smoke commands in `pyproject.toml`.
 
