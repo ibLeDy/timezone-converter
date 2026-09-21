@@ -1,10 +1,12 @@
 import argparse
 import re
+from datetime import date
 from importlib import metadata
 
 import pytest
 
 from timezone_converter import main as main_module
+from timezone_converter.main import _date_value
 from timezone_converter.main import _hour_value
 from timezone_converter.main import _list_letter
 from timezone_converter.main import build_parser
@@ -27,6 +29,23 @@ def test_hour_value_invalid():
 def test_hour_value_rejects_non_numbers():
     with pytest.raises(argparse.ArgumentTypeError, match='whole number'):
         _hour_value('noon')
+
+
+def test_date_value_parses_iso_dates():
+    assert _date_value('2026-03-08') == date(2026, 3, 8)
+
+
+@pytest.mark.parametrize('argument', ('08-03-2026', '2026-13-01', 'tomorrow', ''))
+def test_date_value_rejects_anything_else(argument):
+    with pytest.raises(argparse.ArgumentTypeError, match='YYYY-MM-DD'):
+        _date_value(argument)
+
+
+def test_invalid_date_exits_two_with_message_on_stderr(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        build_parser().parse_args(['tijuana', '--date', 'tomorrow'])
+    assert exit_info.value.code == 2
+    assert 'YYYY-MM-DD' in capsys.readouterr().err
 
 
 def test_list_letter_normalizes():
@@ -151,6 +170,20 @@ def test_main_dispatches_to_comparison_view(monkeypatch):
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
     assert recorded['called'] == 'ComparisonView'
+
+
+def test_main_passes_the_date_to_the_comparison_view(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['tz', 'tijuana', '--date', '2026-03-08'])
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][-1] == date(2026, 3, 8)
+
+
+def test_main_passes_no_date_when_the_flag_is_absent(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['tz', 'tijuana'])
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][-1] is None
 
 
 def test_main_prints_help_without_args(monkeypatch, capsys):

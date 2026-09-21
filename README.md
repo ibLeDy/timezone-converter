@@ -68,6 +68,7 @@ Useful flags:
 timezone-converter tijuana new_york --zone
 timezone-converter tijuana new_york --order
 timezone-converter tijuana --hour 14
+timezone-converter tijuana --date 2026-03-08
 timezone-converter tijuana --difference
 timezone-converter --search york
 timezone-converter --list tbd
@@ -121,6 +122,13 @@ The value is a local wall-clock hour, so on the days your clocks change it
 still refers to the hour you actually see on the clock. When your clocks fall
 back, the repeated hour happens twice and both instants are shown. When they
 spring forward, the skipped hour never happens, and asking for it is an error.
+
+### Compare another day
+
+Using the `--date` argument, you can compare a different local calendar day
+instead of today, given as `YYYY-MM-DD`. The day is built from that date's
+own timezone rules, so a day on which your clocks change still shows its
+real 23 or 25 hours rather than today's offset applied to another date.
 
 ### Search for a timezone
 

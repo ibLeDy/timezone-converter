@@ -1,5 +1,6 @@
 import argparse
 import string
+from datetime import date
 from datetime import datetime
 from typing import Any
 from typing import List
@@ -29,6 +30,15 @@ def _hour_value(argument: str) -> int:
             'Value for --hour must be between 00 and 23',
         )
     return hour
+
+
+def _date_value(argument: str) -> date:
+    try:
+        return datetime.strptime(argument, '%Y-%m-%d').date()
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f'{argument !r} is not a date in YYYY-MM-DD form',
+        )
 
 
 def _list_letter(argument: str) -> List[str]:
@@ -83,7 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
     -------
     argparse.ArgumentParser
         Parser configured with the ``timezone``, ``--list``, ``--version``,
-        ``--zone``, ``--hour``, ``--search``, ``--order``, and
+        ``--zone``, ``--hour``, ``--search``, ``--date``, ``--order``, and
         ``--difference`` arguments.
     """
     parser = argparse.ArgumentParser(
@@ -133,6 +143,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=str.lower,
         metavar='WORD',
         help='fuzzy search for a timezone',
+    )
+    parser.add_argument(
+        '-D',
+        '--date',
+        type=_date_value,
+        metavar='YYYY-MM-DD',
+        help='compare this local calendar day instead of today',
     )
     parser.add_argument(
         '-o',
@@ -195,6 +212,7 @@ def main() -> int:
             args.hour,
             args.order,
             args.difference,
+            args.date,
         ).print_table()
     else:
         parser.print_help()

@@ -123,6 +123,8 @@ commands =
     timezone-converter tijuana new_york --hour
     timezone-converter tijuana --zone
     timezone-converter tijuana new_york --order
+    timezone-converter tijuana --date 2026-03-08
+    timezone-converter tijuana new_york --date 2026-11-01 --zone
     timezone-converter tijuana --difference
     timezone-converter tijuana --difference --zone
     timezone-converter --search york
