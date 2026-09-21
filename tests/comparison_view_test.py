@@ -88,6 +88,44 @@ def test_unknown_timezone_without_suggestions_exits(capsys):
     assert captured.out == ''
 
 
+def test_ambiguous_short_name_warns_but_still_resolves(capsys):
+    view = _make_view(['istanbul'])
+
+    captured = capsys.readouterr()
+    assert str(view.zones[1]) == 'Europe/Istanbul'
+    assert 'warning' in captured.err
+    assert 'istanbul' in captured.err
+    assert 'Asia/Istanbul' in captured.err
+    # The warning must not reach stdout, where it would corrupt a piped
+    # table or a --format json payload.
+    assert captured.out == ''
+
+
+def test_ambiguous_warning_leaves_json_output_parseable(capsys):
+    view = _make_view(['istanbul'], output_format='json')
+    capsys.readouterr()
+
+    assert view.print_table() == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)['columns'][1]['zone'] == 'Europe/Istanbul'
+
+
+def test_a_full_path_does_not_warn(capsys):
+    _make_view(['asia/istanbul'])
+    assert capsys.readouterr().err == ''
+
+
+def test_an_unambiguous_short_name_does_not_warn(capsys):
+    _make_view(['new_york'])
+    assert capsys.readouterr().err == ''
+
+
+def test_an_ambiguous_local_override_warns_too(capsys):
+    view = _make_view(['london'], local='istanbul')
+    assert str(view.local_zone) == 'Europe/Istanbul'
+    assert 'warning' in capsys.readouterr().err
+
+
 def test_base_instant_is_local_midnight_today(monkeypatch):
     fixed = datetime(2026, 3, 8, 15, 30)
 

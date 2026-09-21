@@ -171,6 +171,18 @@ class ComparisonView(Helper):
                     table.add_row(match)
                 self._print_error_with_rich(table)
             raise SystemExit(1)
+
+        # A short name that several zones share resolves to exactly one of
+        # them, and which one is an implementation detail of the lookup
+        # table. Say so, on stderr so it cannot pollute piped output, rather
+        # than letting the wrong city look like the right answer.
+        alternatives = self.ambiguous_alternatives(timezone)
+        if alternatives:
+            others = ', '.join(name for name in alternatives if name != timezone_name)
+            self._print_error_with_rich(
+                f'warning: {timezone !r} matches {len(alternatives)} timezones; '
+                f'using {timezone_name !r}. Give a full path for: {others}',
+            )
         return timezone_name
 
     def _difference_hours(self, zone: Optional[tzinfo]) -> float:
