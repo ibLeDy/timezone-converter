@@ -94,6 +94,12 @@ Multiple timezones can be provided to get a side-by-side comparison.
 Short timezone names such as `new_york` are supported, as are canonical
 timezone paths such as `America/New_York`.
 
+A few short names are shared by more than one zone, such as `istanbul`,
+which is both `Asia/Istanbul` and `Europe/Istanbul`. One of them is picked,
+and a warning on stderr names the alternatives so you can give a full path
+instead. The warning never touches the table itself, so piping the output
+stays safe.
+
 ### Current hour highlighting
 
 The row containing the current hour will be highlighted.

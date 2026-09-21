@@ -30,6 +30,12 @@ their notes.
   instants of a repeated fall-back hour stay distinct; each column reports
   its resolved zone, abbreviation and signed hour difference from local, and
   each row says whether it is the current hour.
+- A warning when a short timezone name is shared by more than one zone,
+  such as `istanbul`, which is both `Asia/Istanbul` and `Europe/Istanbul`.
+  Which one wins is an implementation detail of the lookup table, so the
+  warning names the zone used and the alternatives to reach with a full
+  path. It goes to stderr and the resolution is unchanged, so scripts and
+  pipes are unaffected.
 
 ## [1.0.0] - 2026-09-20
 
