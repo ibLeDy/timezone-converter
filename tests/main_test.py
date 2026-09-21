@@ -172,18 +172,39 @@ def test_main_dispatches_to_comparison_view(monkeypatch):
     assert recorded['called'] == 'ComparisonView'
 
 
+# ComparisonView takes its arguments positionally, so name the positions
+# rather than indexing from the end: a new trailing argument would otherwise
+# silently retarget an existing assertion.
+DATE_ARG = 5
+LOCAL_ARG = 6
+
+
 def test_main_passes_the_date_to_the_comparison_view(monkeypatch):
     monkeypatch.setattr('sys.argv', ['tz', 'tijuana', '--date', '2026-03-08'])
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
-    assert recorded['args'][-1] == date(2026, 3, 8)
+    assert recorded['args'][DATE_ARG] == date(2026, 3, 8)
 
 
 def test_main_passes_no_date_when_the_flag_is_absent(monkeypatch):
     monkeypatch.setattr('sys.argv', ['tz', 'tijuana'])
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
-    assert recorded['args'][-1] is None
+    assert recorded['args'][DATE_ARG] is None
+
+
+def test_main_passes_the_local_override_to_the_comparison_view(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['tz', 'tijuana', '--local', 'new_york'])
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][LOCAL_ARG] == 'new_york'
+
+
+def test_main_passes_no_local_override_when_the_flag_is_absent(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['tz', 'tijuana'])
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][LOCAL_ARG] is None
 
 
 def test_main_prints_help_without_args(monkeypatch, capsys):

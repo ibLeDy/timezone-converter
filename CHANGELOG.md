@@ -18,6 +18,12 @@ their notes.
   future DST transition day still shows its real 23 or 25 hours rather than
   today's offset applied to another date. Combines with `--hour`, which
   still means the wall-clock hour on the chosen day.
+- `--local TIMEZONE` / `-L`, to pick which timezone the `LOCAL` column
+  represents instead of the machine's own. Useful when the machine's clock
+  is not the one that matters, such as inside a Docker container on a UTC
+  host. The override decides what "today" means, where midnight falls, which
+  instant `--hour` selects and what `--difference` measures from. Unknown
+  names fail exactly like any other timezone argument.
 
 ## [1.0.0] - 2026-09-20
 

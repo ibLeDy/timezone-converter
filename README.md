@@ -69,6 +69,7 @@ timezone-converter tijuana new_york --zone
 timezone-converter tijuana new_york --order
 timezone-converter tijuana --hour 14
 timezone-converter tijuana --date 2026-03-08
+timezone-converter tijuana --local madrid
 timezone-converter tijuana --difference
 timezone-converter --search york
 timezone-converter --list tbd
@@ -129,6 +130,17 @@ Using the `--date` argument, you can compare a different local calendar day
 instead of today, given as `YYYY-MM-DD`. The day is built from that date's
 own timezone rules, so a day on which your clocks change still shows its
 real 23 or 25 hours rather than today's offset applied to another date.
+
+### Override your local timezone
+
+Using the `--local` argument, you can pick which timezone the `LOCAL` column
+represents, instead of the one your machine is set to. It accepts the same
+names as any other timezone argument.
+
+This matters when the machine's clock is not the one you care about, such as
+inside a Docker container, where the host is usually set to UTC. Everything
+follows the override: which day is "today", where midnight falls, which hour
+`--hour` selects, and what `--difference` measures from.
 
 ### Search for a timezone
 

@@ -17,8 +17,17 @@ def _make_view(
     order=False,
     difference=False,
     day=None,
+    local=None,
 ):
-    return ComparisonView(list(timezones), zone, hour, order, difference, day)
+    return ComparisonView(
+        list(timezones),
+        zone,
+        hour,
+        order,
+        difference,
+        day,
+        local,
+    )
 
 
 @pytest.fixture
@@ -331,6 +340,96 @@ def test_date_on_a_spring_forward_day_still_rejects_the_skipped_hour(
 
     assert exit_info.value.code == 1
     assert 'does not exist' in capsys.readouterr().err
+
+
+# ``--local`` pins the local zone through the CLI itself, so these need no
+# monkeypatching: they exercise the real construction path end to end, which
+# is exactly the Docker-host-on-UTC case the flag exists for.
+def test_local_override_sets_the_local_column_and_midnight():
+    view = _make_view(['tokyo'], local='new_york', day=date(2026, 6, 1))
+    cells = list(view._build_table().columns[0]._cells)
+    assert cells[0] == '2026-06-01 00:00'
+    assert len(cells) == 24
+
+
+def test_local_override_spring_forward_day_is_23_hours():
+    view = _make_view(['london'], local='new_york', day=date(2026, 3, 8))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 23
+    assert all(cell.startswith('2026-03-08') for cell in cells)
+
+
+def test_local_override_fall_back_day_is_25_hours():
+    view = _make_view(['london'], local='new_york', day=date(2026, 11, 1))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 25
+    assert all(cell.startswith('2026-11-01') for cell in cells)
+
+
+def test_local_override_drives_wall_clock_hour_selection():
+    view = _make_view(['london'], local='new_york', hour=14, day=date(2026, 3, 8))
+    assert list(view._build_table().columns[0]._cells) == ['2026-03-08 14:00']
+
+
+def test_local_override_repeats_a_fall_back_hour():
+    view = _make_view(['london'], local='new_york', hour=1, day=date(2026, 11, 1))
+    assert list(view._build_table().columns[0]._cells) == [
+        '2026-11-01 01:00',
+        '2026-11-01 01:00',
+    ]
+
+
+def test_local_override_rejects_an_hour_it_skips(capsys):
+    view = _make_view(['london'], local='new_york', hour=2, day=date(2026, 3, 8))
+    with pytest.raises(SystemExit) as exit_info:
+        view._build_table()
+
+    assert exit_info.value.code == 1
+    assert 'does not exist' in capsys.readouterr().err
+
+
+def test_local_override_shows_its_abbreviation_with_zone():
+    view = _make_view(['london'], local='new_york', zone=True, day=date(2026, 6, 1))
+    assert view._get_headers()[0] == 'LOCAL (EDT)'
+
+
+def test_local_override_is_the_baseline_for_difference():
+    # New York is UTC-4 on this date and Tokyo UTC+9, so Tokyo reads +13h
+    # from an overridden New York local rather than from the machine's zone.
+    view = _make_view(
+        ['tokyo'],
+        local='new_york',
+        difference=True,
+        day=date(2026, 6, 1),
+    )
+    assert view._get_headers()[1] == 'ASIA/TOKYO +13h'
+
+
+def test_local_override_accepts_a_canonical_path():
+    view = _make_view(['london'], local='America/New_York', day=date(2026, 6, 1))
+    assert str(view.local_zone) == 'America/New_York'
+
+
+def test_unknown_local_override_exits(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        _make_view(['london'], local='zzzzzzzzzz')
+
+    assert exit_info.value.code == 1
+    assert 'not an available timezone' in capsys.readouterr().err
+
+
+def test_no_local_override_leaves_the_machine_zone_in_charge():
+    view = _make_view(['london'])
+    assert view.local_zone is None
+
+
+def test_local_override_decides_what_today_means():
+    # "Today" has to be read in the overridden zone, otherwise a UTC host
+    # comparing against Kiritimati (UTC+14) would show yesterday's date.
+    view = _make_view(['london'], local='kiritimati')
+    assert (
+        view.base_instant.date() == datetime.now(ZoneInfo('Pacific/Kiritimati')).date()
+    )
 
 
 def test_hour_builds_one_row():
