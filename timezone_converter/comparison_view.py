@@ -37,6 +37,7 @@ class ComparisonView(Helper):
         order: bool,
         difference: bool,
         day: Optional[date] = None,
+        local: Optional[str] = None,
     ) -> None:
         """Resolve the requested timezones and prepare the comparison state.
 
@@ -60,29 +61,44 @@ class ComparisonView(Helper):
             from the local timezone to the header (e.g. ``+5h``).
         day : Optional[date]
             The local calendar day to compare. Defaults to today.
+        local : Optional[str]
+            Timezone to treat as local, overriding the machine's own. Given
+            in the same forms as `timezones`.
 
         Raises
         ------
         SystemExit
-            If a timezone name in `timezones` cannot be resolved.
+            If a timezone name in `timezones` or `local` cannot be resolved.
         """
         self.zone = zone
         self.hour = hour
         self.difference = difference
 
-        # Local midnight of the day being compared. ``astimezone`` on a naive
-        # datetime resolves it against the local rules in force at that
-        # instant, so a past or future date gets that date's offset rather
-        # than today's.
-        chosen_day = day if day is not None else datetime.now().date()
-        self.base_instant = datetime(
+        # ``None`` keeps the machine's own timezone, tracked through
+        # ``_to_local``. An override is resolved the same way a foreign zone
+        # is, so a typo gets the same suggestions and the same exit code.
+        self.local_zone: Optional[tzinfo] = None
+        if local is not None:
+            self.local_zone = ZoneInfo(self._get_timezone_name(local))
+
+        # Local midnight of the day being compared, in whichever zone counts
+        # as local. For the machine's own zone, ``astimezone`` on a naive
+        # datetime resolves it against the rules in force on that date, so a
+        # past or future day gets that day's offset rather than today's.
+        chosen_day = day if day is not None else self._today()
+        naive_midnight = datetime(
             chosen_day.year,
             chosen_day.month,
             chosen_day.day,
-        ).astimezone()
+        )
+        if self.local_zone is None:
+            self.base_instant = naive_midnight.astimezone()
+        else:
+            self.base_instant = naive_midnight.replace(tzinfo=self.local_zone)
 
-        # ``None`` represents the local timezone; it is rendered with the
-        # no-argument ``astimezone`` so it tracks DST at each instant.
+        # ``None`` represents the local column; it is rendered through
+        # ``_to_local`` so it tracks DST at each instant, whether that means
+        # the machine's zone or the ``--local`` override.
         self.zones: List[Optional[tzinfo]] = [None]
 
         for timezone in timezones:
@@ -92,6 +108,22 @@ class ComparisonView(Helper):
         if order:
             self._sort_timezone_display()
 
+    def _today(self) -> date:
+        # "Today" is a local notion, so an overridden local zone decides it
+        # too: on a UTC host comparing against Europe/Madrid, the day to show
+        # is Madrid's, which is the point of the override.
+        if self.local_zone is None:
+            return datetime.now().date()
+        return datetime.now(self.local_zone).date()
+
+    def _to_local(self, instant: datetime) -> datetime:
+        # Routes every "what does this instant look like locally" question
+        # through one place, so the override applies to the LOCAL column, to
+        # the day boundaries and to wall-clock hour selection alike.
+        if self.local_zone is None:
+            return _to_local(instant)
+        return instant.astimezone(self.local_zone)
+
     def _convert(
         self,
         zone: Optional[tzinfo],
@@ -99,7 +131,7 @@ class ComparisonView(Helper):
     ) -> datetime:
         if instant is None:
             instant = self.base_instant
-        return _to_local(instant) if zone is None else instant.astimezone(zone)
+        return self._to_local(instant) if zone is None else instant.astimezone(zone)
 
     def _offset(self, zone: Optional[tzinfo]) -> timedelta:
         # Aware datetimes always report an offset; ``or`` only narrows the type.
@@ -167,11 +199,11 @@ class ComparisonView(Helper):
         # spill into the next day (spring forward) or drop the last hour (fall
         # back). Stepping absolute UTC instants keeps each conversion DST-aware.
         base_utc = self.base_instant.astimezone(datetime_timezone.utc)
-        base_date = _to_local(self.base_instant).date()
+        base_date = self._to_local(self.base_instant).date()
         instants: List[datetime] = []
         hour = 0
         instant = base_utc
-        while _to_local(instant).date() == base_date:
+        while self._to_local(instant).date() == base_date:
             instants.append(instant)
             hour += 1
             instant = base_utc + timedelta(hours=hour)
@@ -190,14 +222,15 @@ class ComparisonView(Helper):
         # A fall-back day repeats a local hour, so this can legitimately match
         # twice; both instants are shown, matching the full-day table.
         matching = [
-            instant for instant in instants if _to_local(instant).hour == self.hour
+            instant for instant in instants if self._to_local(instant).hour == self.hour
         ]
         if not matching:
             # A spring-forward day skips a local hour entirely; there is no
             # instant to show, so say so instead of rendering an empty table.
             self._print_error_with_rich(
                 f'error: {self.hour:02d}:00 does not exist on '
-                f'{_to_local(self.base_instant).date()} in your local timezone, '
+                f'{self._to_local(self.base_instant).date()} in your local '
+                'timezone, '
                 'the clocks skip forward over it',
             )
             raise SystemExit(1)
