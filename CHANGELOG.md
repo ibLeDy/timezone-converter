@@ -19,7 +19,7 @@ their notes.
   today's offset applied to another date. Combines with `--hour`, which
   still means the wall-clock hour on the chosen day.
 
-## [1.0.0] - unreleased
+## [1.0.0] - 2026-09-20
 
 First stable release. Everything below has been sitting on `main` since
 `v0.16.1` without being published, so this is the release that actually ships
