@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "timezone-converter"
-version = "0.16.1"
+version = "1.0.0"
 description = "Compare your local timezone with foreign ones."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -15,7 +15,7 @@ authors = [
     { name = "Iago Alonso", email = "deejaynof@gmail.com" },
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
