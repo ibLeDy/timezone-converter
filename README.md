@@ -70,6 +70,7 @@ timezone-converter tijuana new_york --order
 timezone-converter tijuana --hour 14
 timezone-converter tijuana --date 2026-03-08
 timezone-converter tijuana --local madrid
+timezone-converter tijuana --format json
 timezone-converter tijuana --difference
 timezone-converter --search york
 timezone-converter --list tbd
@@ -141,6 +142,47 @@ This matters when the machine's clock is not the one you care about, such as
 inside a Docker container, where the host is usually set to UTC. Everything
 follows the override: which day is "today", where midnight falls, which hour
 `--hour` selects, and what `--difference` measures from.
+
+### Machine-readable output
+
+Using `--format json`, a comparison is printed as JSON instead of a table.
+The table remains the default.
+
+Times are ISO-8601 with their UTC offset, rather than the table's display
+format, so the two instants of a repeated fall-back hour stay distinct. Each
+column reports its resolved zone, its abbreviation for the day, and its
+signed hour difference from local, and each row says whether it is the
+current hour.
+
+```json
+{
+  "date": "2026-06-01",
+  "columns": [
+    {
+      "label": "LOCAL",
+      "zone": "America/New_York",
+      "abbreviation": "EDT",
+      "difference_hours": 0.0
+    },
+    {
+      "label": "ASIA/TOKYO",
+      "zone": "Asia/Tokyo",
+      "abbreviation": "JST",
+      "difference_hours": 13.0
+    }
+  ],
+  "rows": [
+    {
+      "current": false,
+      "times": ["2026-06-01T00:00:00-04:00", "2026-06-01T13:00:00+09:00"]
+    }
+  ]
+}
+```
+
+The `zone` of the `LOCAL` column is `null` unless you set `--local`, because
+your machine's timezone is read as a plain UTC offset rather than a named
+zone.
 
 ### Search for a timezone
 

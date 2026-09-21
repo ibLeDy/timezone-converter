@@ -1,9 +1,12 @@
+import json
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone as datetime_timezone
 from datetime import tzinfo
 from difflib import get_close_matches
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -38,6 +41,7 @@ class ComparisonView(Helper):
         difference: bool,
         day: Optional[date] = None,
         local: Optional[str] = None,
+        output_format: str = 'table',
     ) -> None:
         """Resolve the requested timezones and prepare the comparison state.
 
@@ -64,6 +68,9 @@ class ComparisonView(Helper):
         local : Optional[str]
             Timezone to treat as local, overriding the machine's own. Given
             in the same forms as `timezones`.
+        output_format : str
+            ``'table'`` for the Rich table, or ``'json'`` for a
+            machine-readable payload on stdout.
 
         Raises
         ------
@@ -73,6 +80,7 @@ class ComparisonView(Helper):
         self.zone = zone
         self.hour = hour
         self.difference = difference
+        self.output_format = output_format
 
         # ``None`` keeps the machine's own timezone, tracked through
         # ``_to_local``. An override is resolved the same way a foreign zone
@@ -165,13 +173,18 @@ class ComparisonView(Helper):
             raise SystemExit(1)
         return timezone_name
 
-    def _format_difference(self, zone: Optional[tzinfo]) -> str:
+    def _difference_hours(self, zone: Optional[tzinfo]) -> float:
         # Signed hours relative to the local offset, evaluated at the same
         # ``base_instant`` used for ``--zone``'s tzname, so the two flags stay
-        # consistent across DST transitions. Zero-pad the decimal only when
-        # the difference is not a whole number (e.g. ``+9.5h`` but ``-5h``,
-        # never ``-5.0h``) to keep the format compact and predictable.
-        diff_hours = (self._offset(zone) - self._offset(None)).total_seconds() / 3600
+        # consistent across DST transitions. The table and the JSON payload
+        # both read this, so there is one definition of the difference.
+        return (self._offset(zone) - self._offset(None)).total_seconds() / 3600
+
+    def _format_difference(self, zone: Optional[tzinfo]) -> str:
+        # Zero-pad the decimal only when the difference is not a whole number
+        # (e.g. ``+9.5h`` but ``-5h``, never ``-5.0h``) to keep the format
+        # compact and predictable.
+        diff_hours = self._difference_hours(zone)
         if diff_hours.is_integer():
             return f'{diff_hours:+.0f}h'
         formatted = f'{diff_hours:+.2f}'.rstrip('0').rstrip('.')
@@ -256,13 +269,60 @@ class ComparisonView(Helper):
 
         return table
 
+    def _zone_name(self, zone: Optional[tzinfo]) -> Optional[str]:
+        # The IANA name, where there is one to report. The machine's own zone
+        # is reached through ``astimezone()``, which yields a fixed-offset
+        # tzinfo rather than a named zone, so ``null`` is the honest answer
+        # there instead of an abbreviation masquerading as a zone name.
+        if zone is not None:
+            return str(zone)
+        return None if self.local_zone is None else str(self.local_zone)
+
+    def _build_payload(self) -> Dict[str, Any]:
+        instants = self._selected_instants()
+        now = datetime.now().astimezone()
+        return {
+            'date': self._to_local(self.base_instant).date().isoformat(),
+            'columns': [
+                {
+                    'label': 'LOCAL' if zone is None else str(zone).upper(),
+                    'zone': self._zone_name(zone),
+                    'abbreviation': self._convert(zone).tzname(),
+                    'difference_hours': self._difference_hours(zone),
+                }
+                for zone in self.zones
+            ],
+            'rows': [
+                {
+                    'current': instant <= now < instant + timedelta(hours=1),
+                    # ISO-8601 with the offset, unlike the table's display
+                    # format: a consumer needs the offset to know which
+                    # instant a repeated fall-back hour refers to.
+                    'times': [
+                        self._convert(zone, instant).isoformat() for zone in self.zones
+                    ],
+                }
+                for instant in instants
+            ],
+        }
+
     def print_table(self) -> int:
-        """Print the comparison table to the console.
+        """Print the comparison to the console.
+
+        Renders the Rich table, or the JSON payload when the view was
+        built with ``output_format='json'``.
 
         Returns
         -------
         int
             Always ``0``.
         """
+        if self.output_format == 'json':
+            # Deliberately not routed through Rich: its wrapping and
+            # highlighting would corrupt output whose whole purpose is to be
+            # parsed by something else.
+            self._print_plain(json.dumps(self._build_payload(), indent=2))
+            return 0
+
         self._print_with_rich(self._build_table())
         return 0
