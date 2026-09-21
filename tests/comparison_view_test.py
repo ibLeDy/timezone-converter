@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -18,6 +19,7 @@ def _make_view(
     difference=False,
     day=None,
     local=None,
+    output_format='table',
 ):
     return ComparisonView(
         list(timezones),
@@ -27,6 +29,7 @@ def _make_view(
         difference,
         day,
         local,
+        output_format,
     )
 
 
@@ -430,6 +433,116 @@ def test_local_override_decides_what_today_means():
     assert (
         view.base_instant.date() == datetime.now(ZoneInfo('Pacific/Kiritimati')).date()
     )
+
+
+def _payload(capsys, **kwargs):
+    assert _make_view(output_format='json', **kwargs).print_table() == 0
+    captured = capsys.readouterr()
+    assert captured.err == ''
+    return json.loads(captured.out)
+
+
+def test_json_output_is_parseable_and_not_rich_formatted(capsys):
+    # The point of the format: Rich's wrapping, highlighting and markup
+    # would all corrupt output whose job is to be parsed.
+    payload = _payload(
+        capsys,
+        timezones=['tijuana'],
+        local='new_york',
+        day=date(2026, 6, 1),
+    )
+    assert payload['date'] == '2026-06-01'
+    assert [column['label'] for column in payload['columns']] == [
+        'LOCAL',
+        'AMERICA/TIJUANA',
+    ]
+    assert len(payload['rows']) == 24
+
+
+def test_json_columns_carry_zone_abbreviation_and_difference(capsys):
+    payload = _payload(
+        capsys,
+        timezones=['tokyo'],
+        local='new_york',
+        day=date(2026, 6, 1),
+    )
+    local_column, tokyo = payload['columns']
+    assert local_column['zone'] == 'America/New_York'
+    assert local_column['abbreviation'] == 'EDT'
+    assert local_column['difference_hours'] == 0.0
+    assert tokyo['zone'] == 'Asia/Tokyo'
+    assert tokyo['difference_hours'] == 13.0
+
+
+def test_json_reports_no_zone_name_for_the_machine_timezone(capsys):
+    # ``astimezone()`` yields a fixed-offset tzinfo, not a named zone, so
+    # null is the honest answer rather than an abbreviation pretending to
+    # be an IANA name.
+    payload = _payload(capsys, timezones=['tokyo'], day=date(2026, 6, 1))
+    assert payload['columns'][0]['zone'] is None
+    assert payload['columns'][0]['abbreviation'] is not None
+
+
+def test_json_times_are_iso_8601_with_offsets(capsys):
+    payload = _payload(
+        capsys,
+        timezones=['tijuana'],
+        local='new_york',
+        hour=12,
+        day=date(2026, 6, 1),
+    )
+    assert payload['rows'][0]['times'] == [
+        '2026-06-01T12:00:00-04:00',
+        '2026-06-01T09:00:00-07:00',
+    ]
+
+
+def test_json_spring_forward_day_has_23_rows(capsys):
+    payload = _payload(
+        capsys,
+        timezones=['london'],
+        local='new_york',
+        day=date(2026, 3, 8),
+    )
+    assert len(payload['rows']) == 23
+
+
+def test_json_fall_back_day_has_25_rows_with_distinct_offsets(capsys):
+    # The repeated local hour is the reason times carry their offset: the
+    # two 01:00 rows are only distinguishable by -04:00 versus -05:00.
+    payload = _payload(
+        capsys,
+        timezones=['london'],
+        local='new_york',
+        day=date(2026, 11, 1),
+    )
+    assert len(payload['rows']) == 25
+    repeated = [
+        row['times'][0]
+        for row in payload['rows']
+        if row['times'][0].startswith('2026-11-01T01:00')
+    ]
+    assert repeated == [
+        '2026-11-01T01:00:00-04:00',
+        '2026-11-01T01:00:00-05:00',
+    ]
+
+
+def test_json_marks_the_current_hour(capsys):
+    payload = _payload(capsys, timezones=['london'])
+    assert sum(row['current'] for row in payload['rows']) == 1
+
+
+def test_json_does_not_mark_a_current_hour_on_another_day(capsys):
+    payload = _payload(capsys, timezones=['london'], day=date(2026, 6, 1))
+    assert not any(row['current'] for row in payload['rows'])
+
+
+def test_table_remains_the_default(capsys):
+    view = _make_view(['london'])
+    assert view.output_format == 'table'
+    assert view.print_table() == 0
+    assert 'LOCAL' in capsys.readouterr().out
 
 
 def test_hour_builds_one_row():

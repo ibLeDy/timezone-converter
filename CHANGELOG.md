@@ -24,6 +24,12 @@ their notes.
   host. The override decides what "today" means, where midnight falls, which
   instant `--hour` selects and what `--difference` measures from. Unknown
   names fail exactly like any other timezone argument.
+- `--format {table,json}` / `-f`, printing a comparison as JSON for other
+  programs to read. The table stays the default. Times are ISO-8601 with
+  their UTC offset rather than the table's display format, so the two
+  instants of a repeated fall-back hour stay distinct; each column reports
+  its resolved zone, abbreviation and signed hour difference from local, and
+  each row says whether it is the current hour.
 
 ## [1.0.0] - 2026-09-20
 

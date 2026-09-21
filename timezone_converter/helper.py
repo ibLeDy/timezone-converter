@@ -82,6 +82,13 @@ class Helper:
         Console().print(obj)
 
     @staticmethod
+    def _print_plain(text: str) -> None:
+        # The one output that must not go through Rich: machine-readable
+        # payloads, where wrapping, highlighting or markup interpretation
+        # would corrupt what a consumer has to parse.
+        print(text)
+
+    @staticmethod
     def _print_error_with_rich(obj: Union[str, Columns, Table]) -> None:
         # Errors belong on stderr so a caller can redirect or pipe the real
         # output without swallowing the reason it is empty.

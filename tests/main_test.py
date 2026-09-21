@@ -177,6 +177,7 @@ def test_main_dispatches_to_comparison_view(monkeypatch):
 # silently retarget an existing assertion.
 DATE_ARG = 5
 LOCAL_ARG = 6
+FORMAT_ARG = 7
 
 
 def test_main_passes_the_date_to_the_comparison_view(monkeypatch):
@@ -205,6 +206,27 @@ def test_main_passes_no_local_override_when_the_flag_is_absent(monkeypatch):
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
     assert recorded['args'][LOCAL_ARG] is None
+
+
+def test_main_passes_the_output_format_to_the_comparison_view(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['tz', 'tijuana', '--format', 'json'])
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][FORMAT_ARG] == 'json'
+
+
+def test_format_defaults_to_table(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['tz', 'tijuana'])
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][FORMAT_ARG] == 'table'
+
+
+def test_unknown_format_exits_two(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        build_parser().parse_args(['tijuana', '--format', 'yaml'])
+    assert exit_info.value.code == 2
+    assert 'invalid choice' in capsys.readouterr().err
 
 
 def test_main_prints_help_without_args(monkeypatch, capsys):

@@ -127,6 +127,8 @@ commands =
     timezone-converter tijuana new_york --date 2026-11-01 --zone
     timezone-converter tijuana --local madrid
     timezone-converter tijuana --local new_york --date 2026-03-08 --hour 14
+    timezone-converter tijuana --format json
+    timezone-converter tijuana new_york --format json --local new_york --date 2026-11-01
     timezone-converter tijuana --difference
     timezone-converter tijuana --difference --zone
     timezone-converter --search york

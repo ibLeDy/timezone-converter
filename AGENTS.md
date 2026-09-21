@@ -33,8 +33,11 @@ integer exit codes.
 - Preserve short names such as `new_york`, exact paths such as
   `America/New_York`, canonical access to ambiguous short names, useful fuzzy
   suggestions, and nonzero exits for unknown zones.
-- Route normal output through `Helper._print_with_rich`. Manually exercise Rich
-  layout changes and update stale `.github/assets/` examples with
+- Route normal output through `Helper._print_with_rich`, and errors through
+  `Helper._print_error_with_rich`, which writes to stderr. The one exception is
+  machine-readable output (`--format json`), which uses `Helper._print_plain`
+  because Rich's wrapping and highlighting would corrupt it. Manually exercise
+  Rich layout changes and update stale `.github/assets/` examples with
   `python scripts/generate_assets.py`, then review the diff before committing.
 
 ## Compatibility and coordinated changes

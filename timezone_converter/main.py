@@ -94,7 +94,7 @@ def build_parser() -> argparse.ArgumentParser:
     argparse.ArgumentParser
         Parser configured with the ``timezone``, ``--list``, ``--version``,
         ``--zone``, ``--hour``, ``--search``, ``--date``, ``--local``,
-        ``--order``, and ``--difference`` arguments.
+        ``--format``, ``--order``, and ``--difference`` arguments.
     """
     parser = argparse.ArgumentParser(
         prog='timezone-converter',
@@ -156,6 +156,14 @@ def build_parser() -> argparse.ArgumentParser:
         '--local',
         metavar='TIMEZONE',
         help='treat this timezone as local instead of the machine\'s own',
+    )
+    parser.add_argument(
+        '-f',
+        '--format',
+        choices=('table', 'json'),
+        default='table',
+        dest='output_format',
+        help='output format for a comparison (default: table)',
     )
     parser.add_argument(
         '-o',
@@ -220,6 +228,7 @@ def main() -> int:
             args.difference,
             args.date,
             args.local,
+            args.output_format,
         ).print_table()
     else:
         parser.print_help()
