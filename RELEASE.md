@@ -30,10 +30,11 @@ That workflow runs three jobs in order, each one gating the next:
 
 1. `test` validates the release tag against `pyproject.toml` and runs the
    test suite with coverage.
-2. `docker` builds a `linux/amd64` image, loads it, and smoke-tests the
-   packaged CLI entrypoint (`--version`, a comparison, and `--list`) before
-   building and pushing the multi-arch `linux/amd64` and `linux/arm64`
-   images. Targets the `release` environment.
+2. `docker` builds a `linux/amd64` image, loads it, and runs
+   `scripts/smoke_test_image.sh` against it (the packaged CLI entrypoint, and
+   that `TZ` sets the `LOCAL` column) before building and pushing the
+   multi-arch `linux/amd64` and `linux/arm64` images. Targets the `release`
+   environment.
 3. `pypi` builds the wheel and source distribution and publishes to PyPI
    with trusted publishing. Targets the `release` environment, and needs
    `docker` to have succeeded.

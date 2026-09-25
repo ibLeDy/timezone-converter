@@ -18,3 +18,4 @@ RELEASE.md
 htmlcov
 coverage.xml
 .ruff_cache
+scripts

@@ -23,3 +23,13 @@ updates:
       prefix: chore
     labels:
       - dependencies
+
+  # The Dockerfile's base image. Without this nothing proposes updates to it.
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
+    labels:
+      - dependencies

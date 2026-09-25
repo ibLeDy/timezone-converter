@@ -69,13 +69,10 @@ jobs:
           push: false
           tags: timezone-converter:smoke
 
-      # Exercises the packaged CLI entrypoint, not the test suite: the
-      # release image deliberately excludes tests (see .dockerignore).
+      # The same checks integration.yml runs on every pull request, repeated
+      # here because the base image tag moves between that run and a release.
       - name: Smoke test the image
-        run: |
-          docker run --rm timezone-converter:smoke --version
-          docker run --rm timezone-converter:smoke tijuana new_york
-          docker run --rm timezone-converter:smoke --list tbd
+        run: scripts/smoke_test_image.sh timezone-converter:smoke
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
