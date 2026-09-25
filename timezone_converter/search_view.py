@@ -40,11 +40,13 @@ class SearchView(Helper):
             Always ``0``.
         """
         timezones = self._search_and_sort(self.search)
-        self._print_with_rich(
-            'Found {} {}: {}'.format(
-                len(timezones),
-                'timezone' if len(timezones) == 1 else 'timezones',
-                ', '.join(map(lambda tz: f'"{tz}"', timezones)),
-            ),
+        summary = 'Found {} {}'.format(
+            len(timezones),
+            'timezone' if len(timezones) == 1 else 'timezones',
         )
+        # Only introduce a list when there is one; with no matches the colon
+        # would dangle at the end of the line.
+        if timezones:
+            summary += ': ' + ', '.join(f'"{tz}"' for tz in timezones)
+        self._print_with_rich(summary)
         return 0

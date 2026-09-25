@@ -6,6 +6,7 @@ from importlib import metadata
 import pytest
 
 from timezone_converter import main as main_module
+from timezone_converter.comparison_view import CURRENT_HOUR
 from timezone_converter.main import _date_value
 from timezone_converter.main import _hour_value
 from timezone_converter.main import _list_letter
@@ -64,6 +65,19 @@ def test_invalid_hour_exits_two_with_message_on_stderr(capsys):
         build_parser().parse_args(['--hour', '24'])
     assert exit_info.value.code == 2
     assert 'between 00 and 23' in capsys.readouterr().err
+
+
+def test_hour_without_a_value_defers_to_the_view():
+    # The current hour depends on the local zone, which the parser does not
+    # know yet, so it must not fill in the machine's hour itself.
+    args = build_parser().parse_args(['new_york', '--hour'])
+    assert args.hour == CURRENT_HOUR
+
+
+def test_hour_rejects_the_current_hour_marker():
+    # The marker must stay unreachable from the command line.
+    with pytest.raises(argparse.ArgumentTypeError):
+        _hour_value(str(CURRENT_HOUR))
 
 
 def test_invalid_list_letter_exits_two_with_message_on_stderr(capsys):
@@ -274,6 +288,34 @@ def test_combining_modes_exits_two(monkeypatch, capsys, argv):
         main()
     assert exit_info.value.code == 2
     assert 'cannot be combined' in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    'argv',
+    (
+        ['--format', 'json'],
+        ['--list', 'tbd', '--format', 'json'],
+        ['--search', 'york', '--format', 'json'],
+    ),
+)
+def test_json_format_without_a_comparison_exits_two(monkeypatch, capsys, argv):
+    # Regression: the flag was ignored, so these printed the help text or a
+    # Rich panel on stdout and exited 0, although JSON had been asked for.
+    monkeypatch.setattr('sys.argv', ['tz', *argv])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 2
+    assert '--format json only applies to a comparison' in captured.err
+    assert captured.out == ''
+
+
+def test_table_format_stays_accepted_without_a_comparison(monkeypatch):
+    # ``table`` is the default, so spelling it out changes nothing anywhere.
+    monkeypatch.setattr('sys.argv', ['tz', '--list', 'tbd', '--format', 'table'])
+    recorded = _patch_view(monkeypatch, 'ListView', 'print_columns')
+    assert main() == 0
+    assert recorded['called'] == 'ListView'
 
 
 def test_modifier_flags_are_not_treated_as_a_second_mode(monkeypatch):

@@ -16,6 +16,13 @@ from rich.table import Table
 from timezone_converter.helper import Helper
 from timezone_converter.helper import local_timezone
 
+# ``--hour`` without a value means "the current hour", but which hour that is
+# depends on the local zone, and the parser runs before ``--local`` or ``TZ``
+# has been resolved. It passes this marker instead and the view fills in the
+# hour once the zone is known. ``-1`` can never come from the user, since
+# ``--hour`` rejects anything outside 0-23.
+CURRENT_HOUR = -1
+
 
 def _to_local(instant: datetime) -> datetime:
     # Single seam for the machine-local conversion. Production uses the
@@ -57,7 +64,8 @@ class ComparisonView(Helper):
             abbreviation) in each column header.
         hour : Optional[int]
             If given, restrict the table to this local wall-clock hour
-            (0-23) instead of the full local day.
+            (0-23) instead of the full local day. :data:`CURRENT_HOUR` means
+            the current hour in the local zone.
         order : bool
             If ``True``, sort the foreign timezones by absolute offset
             from the local timezone.
@@ -111,6 +119,10 @@ class ComparisonView(Helper):
             self.base_instant = naive_midnight.astimezone()
         else:
             self.base_instant = naive_midnight.replace(tzinfo=self.local_zone)
+
+        if self.hour == CURRENT_HOUR:
+            now = datetime.now(datetime_timezone.utc)
+            self.hour = self._to_local(now).hour
 
         # ``None`` represents the local column; it is rendered through
         # ``_to_local`` so it tracks DST at each instant, whether that means

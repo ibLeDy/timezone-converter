@@ -128,7 +128,8 @@ abbreviation, e.g. `AMERICA/TIJUANA (PST) -8h`.
 ### Output a single hour
 
 Using the `--hour` argument, you can output a single hour. If you don't
-provide a value, the current hour will be displayed.
+provide a value, the current hour will be displayed, as read in whichever
+timezone counts as local (see `--local` and `TZ` below).
 
 The value is a local wall-clock hour, so on the days your clocks change it
 still refers to the hour you actually see on the clock. When your clocks fall
@@ -171,7 +172,9 @@ When both are set, `--local` wins.
 ### Machine-readable output
 
 Using `--format json`, a comparison is printed as JSON instead of a table.
-The table remains the default.
+The table remains the default. It only applies to a comparison: with
+`--list`, `--search`, or no timezones at all, it is an error rather than
+being silently ignored, so a script never mistakes other output for JSON.
 
 Times are ISO-8601 with their UTC offset, rather than the table's display
 format, so the two instants of a repeated fall-back hour stay distinct. Each
