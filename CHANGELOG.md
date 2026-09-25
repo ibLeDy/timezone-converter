@@ -48,6 +48,16 @@ their notes.
   resolved with the bundled `tzdata`, identically on every platform. Values
   that are not IANA names, such as POSIX rule strings, still fall back to the
   machine's timezone, and `--local` wins when both are set.
+- `--hour` without a value now shows the current hour in the local timezone
+  set by `--local` or `TZ`. It used to take the machine's own hour, so on a
+  UTC host `--local kiritimati --hour` showed the 10:00 row while it was
+  00:34 in Kiritimati, on the next calendar day.
+- `--search` with no matches prints `Found 0 timezones` instead of ending the
+  line with a dangling `: `.
+- `--format json` without a comparison is now an error (exit code 2). It used
+  to be ignored, so `--list --format json` printed Rich panels, and
+  `--format json` with no timezones printed the help text, both on stdout
+  with exit code 0, which a script cannot tell apart from JSON output.
 
 ## [1.0.0] - 2026-09-20
 

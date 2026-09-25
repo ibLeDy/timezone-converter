@@ -9,6 +9,7 @@ import pytest
 
 import timezone_converter.comparison_view as comparison_view
 from timezone_converter.comparison_view import ComparisonView
+from timezone_converter.comparison_view import CURRENT_HOUR
 
 
 def _make_view(
@@ -804,3 +805,45 @@ def test_json_reports_the_zone_named_by_tz(monkeypatch):
     monkeypatch.setenv('TZ', 'Europe/Madrid')
     payload = _make_view(['new_york'], output_format='json')._build_payload()
     assert payload['columns'][0]['zone'] == 'Europe/Madrid'
+
+
+def _freeze_now(monkeypatch, instant):
+    # Every "now" the view asks for is the same instant, rendered the way the
+    # real ``datetime.now`` would: in the zone asked for, or naive in the
+    # machine's own zone when none is.
+    class _FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return instant.astimezone().replace(tzinfo=None)
+            return instant.astimezone(tz)
+
+    monkeypatch.setattr(comparison_view, 'datetime', _FrozenDateTime)
+
+
+_TEN_THIRTY_FOUR_UTC = datetime(2026, 9, 25, 10, 34, tzinfo=datetime_timezone.utc)
+
+
+def test_current_hour_is_the_hour_in_the_local_override(monkeypatch):
+    # Regression: the parser filled in the machine's hour before --local was
+    # known, so on a UTC host --local kiritimati --hour showed the 10:00 row
+    # when it was 00:34 in Kiritimati (UTC+14), on the next calendar day.
+    _freeze_now(monkeypatch, _TEN_THIRTY_FOUR_UTC)
+    view = _make_view(['new_york'], hour=CURRENT_HOUR, local='kiritimati')
+    assert view.hour == 0
+    assert list(view._build_table().columns[0]._cells) == ['2026-09-26 00:00']
+
+
+def test_current_hour_is_the_hour_in_the_zone_tz_names(monkeypatch):
+    _freeze_now(monkeypatch, _TEN_THIRTY_FOUR_UTC)
+    monkeypatch.setenv('TZ', 'Pacific/Kiritimati')
+    assert _make_view(['new_york'], hour=CURRENT_HOUR).hour == 0
+
+
+def test_current_hour_is_the_machine_hour_without_an_override(
+    monkeypatch,
+    local_timezone,
+):
+    _freeze_now(monkeypatch, _TEN_THIRTY_FOUR_UTC)
+    local_timezone('America/New_York')  # EDT, UTC-4
+    assert _make_view(['new_york'], hour=CURRENT_HOUR).hour == 6
