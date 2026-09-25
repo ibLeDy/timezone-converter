@@ -200,6 +200,15 @@ def _validate_modes(parser: argparse.ArgumentParser, args: argparse.Namespace) -
     if len(modes) > 1:
         parser.error(f'{" and ".join(modes)} cannot be combined, pick one')
 
+    # ``--format`` only shapes a comparison. Anywhere else it used to be
+    # ignored, so a caller asking for JSON got a Rich panel, or the help text,
+    # on stdout with exit code 0, which a consumer cannot tell from success.
+    if args.output_format != 'table' and not args.timezone:
+        parser.error(
+            f'--format {args.output_format} only applies to a comparison, '
+            'give at least one timezone',
+        )
+
 
 def main() -> int:
     """Parse command-line arguments and dispatch to the requested view.

@@ -172,7 +172,9 @@ When both are set, `--local` wins.
 ### Machine-readable output
 
 Using `--format json`, a comparison is printed as JSON instead of a table.
-The table remains the default.
+The table remains the default. It only applies to a comparison: with
+`--list`, `--search`, or no timezones at all, it is an error rather than
+being silently ignored, so a script never mistakes other output for JSON.
 
 Times are ISO-8601 with their UTC offset, rather than the table's display
 format, so the two instants of a repeated fall-back hour stay distinct. Each

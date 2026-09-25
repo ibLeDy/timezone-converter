@@ -54,6 +54,10 @@ their notes.
   00:34 in Kiritimati, on the next calendar day.
 - `--search` with no matches prints `Found 0 timezones` instead of ending the
   line with a dangling `: `.
+- `--format json` without a comparison is now an error (exit code 2). It used
+  to be ignored, so `--list --format json` printed Rich panels, and
+  `--format json` with no timezones printed the help text, both on stdout
+  with exit code 0, which a script cannot tell apart from JSON output.
 
 ## [1.0.0] - 2026-09-20
 

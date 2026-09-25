@@ -290,6 +290,34 @@ def test_combining_modes_exits_two(monkeypatch, capsys, argv):
     assert 'cannot be combined' in capsys.readouterr().err
 
 
+@pytest.mark.parametrize(
+    'argv',
+    (
+        ['--format', 'json'],
+        ['--list', 'tbd', '--format', 'json'],
+        ['--search', 'york', '--format', 'json'],
+    ),
+)
+def test_json_format_without_a_comparison_exits_two(monkeypatch, capsys, argv):
+    # Regression: the flag was ignored, so these printed the help text or a
+    # Rich panel on stdout and exited 0, although JSON had been asked for.
+    monkeypatch.setattr('sys.argv', ['tz', *argv])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 2
+    assert '--format json only applies to a comparison' in captured.err
+    assert captured.out == ''
+
+
+def test_table_format_stays_accepted_without_a_comparison(monkeypatch):
+    # ``table`` is the default, so spelling it out changes nothing anywhere.
+    monkeypatch.setattr('sys.argv', ['tz', '--list', 'tbd', '--format', 'table'])
+    recorded = _patch_view(monkeypatch, 'ListView', 'print_columns')
+    assert main() == 0
+    assert recorded['called'] == 'ListView'
+
+
 def test_modifier_flags_are_not_treated_as_a_second_mode(monkeypatch):
     monkeypatch.setattr('sys.argv', ['tz', 'tijuana', '--zone', '--order'])
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
