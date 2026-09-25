@@ -11,70 +11,17 @@ their notes.
 
 ## [Unreleased]
 
-### Added
-
-- `--date YYYY-MM-DD` / `-D`, to compare a local calendar day other than
-  today. The day is built from that date's own timezone rules, so a past or
-  future DST transition day still shows its real 23 or 25 hours rather than
-  today's offset applied to another date. Combines with `--hour`, which
-  still means the wall-clock hour on the chosen day.
-- `--local TIMEZONE` / `-L`, to pick which timezone the `LOCAL` column
-  represents instead of the machine's own. Useful when the machine's clock
-  is not the one that matters, such as inside a Docker container on a UTC
-  host. The override decides what "today" means, where midnight falls, which
-  instant `--hour` selects and what `--difference` measures from. Unknown
-  names fail exactly like any other timezone argument.
-- `--format {table,json}` / `-f`, printing a comparison as JSON for other
-  programs to read. The table stays the default. Times are ISO-8601 with
-  their UTC offset rather than the table's display format, so the two
-  instants of a repeated fall-back hour stay distinct; each column reports
-  its resolved zone, abbreviation and signed hour difference from local, and
-  each row says whether it is the current hour.
-- A warning when a short timezone name is shared by more than one zone,
-  such as `istanbul`, which is both `Asia/Istanbul` and `Europe/Istanbul`.
-  Which one wins is an implementation detail of the lookup table, so the
-  warning names the zone used and the alternatives to reach with a full
-  path. It goes to stderr and the resolution is unchanged, so scripts and
-  pipes are unaffected.
-
-### Fixed
-
-- `TZ` now reliably sets the local timezone when `--local` is not given, so
-  `docker run -e TZ=Europe/Madrid ...` gives the `LOCAL` column you asked for.
-  It used to be read by the C library, which needs the operating system's
-  timezone database: on images without it, such as slim containers, an IANA
-  name was silently misread as a POSIX rule, producing a column labelled
-  `Europe` at UTC+0, and on Windows it was not honored at all. `TZ` is now
-  resolved with the bundled `tzdata`, identically on every platform. Values
-  that are not IANA names, such as POSIX rule strings, still fall back to the
-  machine's timezone, and `--local` wins when both are set.
-- `--hour` without a value now shows the current hour in the local timezone
-  set by `--local` or `TZ`. It used to take the machine's own hour, so on a
-  UTC host `--local kiritimati --hour` showed the 10:00 row while it was
-  00:34 in Kiritimati, on the next calendar day.
-- `--search` with no matches prints `Found 0 timezones` instead of ending the
-  line with a dangling `: `.
-- `--format json` without a comparison is now an error (exit code 2). It used
-  to be ignored, so `--list --format json` printed Rich panels, and
-  `--format json` with no timezones printed the help text, both on stdout
-  with exit code 0, which a script cannot tell apart from JSON output.
-
-### Removed
-
-- **Breaking:** Python 3.9 is no longer supported; 1.0.0 requires Python 3.10
-  or newer. 3.9 reached end of life in October 2025. On 3.9, `pip` keeps
-  installing `0.16.1`, since it honors the package's `requires-python`.
-
-## [1.0.0] - 2026-09-20
+## [1.0.0] - 2026-09-25
 
 First stable release. Everything below has been sitting on `main` since
 `v0.16.1` without being published, so this is the release that actually ships
 it.
 
-**Upgrading from `0.16.1`:** every entry marked **Breaking** below matters if
-you script against this tool. Two of them are about `--hour`; the rest are
-cases where the CLI used to succeed quietly and now reports an error, plus
-the move of error output from stdout to stderr.
+**Upgrading from `0.16.1`:** 1.0.0 needs Python 3.10 or newer. If you script
+against this tool, also read every entry marked **Breaking** below: one is
+that Python 3.9 removal, two are about `--hour`, and the rest are cases where
+the CLI used to succeed quietly and now reports an error, plus the move of
+error output from stdout to stderr.
 
 ### Added
 
@@ -85,6 +32,32 @@ the move of error output from stdout to stderr.
   Combined with `--zone` the difference follows the abbreviation, e.g.
   `AMERICA/TIJUANA (PST) -8h`. The `LOCAL` column is excluded, since its
   offset from itself is always zero.
+- `--date YYYY-MM-DD` / `-D`, to compare a local calendar day other than
+  today. The day is built from that date's own timezone rules, so a past or
+  future DST transition day still shows its real 23 or 25 hours rather than
+  today's offset applied to another date. Combines with `--hour`, which
+  still means the wall-clock hour on the chosen day.
+- `--local TIMEZONE` / `-L`, to pick which timezone the `LOCAL` column
+  represents instead of the machine's own. Useful when the machine's clock is
+  not the one that matters, such as inside a Docker container on a UTC host.
+  The override decides what "today" means, where midnight falls, which hour is
+  current for a bare `--hour`, which instant `--hour` selects and what
+  `--difference` measures from. Unknown names fail exactly like any other
+  timezone argument.
+- `--format {table,json}` / `-f`, printing a comparison as JSON for other
+  programs to read. The table stays the default. Times are ISO-8601 with
+  their UTC offset rather than the table's display format, so the two
+  instants of a repeated fall-back hour stay distinct; each column reports
+  its resolved zone, abbreviation and signed hour difference from local, and
+  each row says whether it is the current hour. It only applies to a
+  comparison: with `--list`, `--search` or no timezones it is a usage error
+  (exit code `2`), never output a script could mistake for JSON.
+- A warning when a short timezone name is shared by more than one zone,
+  such as `istanbul`, which is both `Asia/Istanbul` and `Europe/Istanbul`.
+  Which one wins is an implementation detail of the lookup table, so the
+  warning names the zone used and the alternatives to reach with a full
+  path. It goes to stderr and the resolution is unchanged, so scripts and
+  pipes are unaffected.
 - `--version` now reports the version of the installed `tzdata` database
   alongside the package version, e.g.
   `timezone-converter 1.0.0 (tzdata 2026.4)`, so a timezone-data question can
@@ -132,6 +105,9 @@ the move of error output from stdout to stderr.
   tool, replace `--single` with `--hour` and `-s` with `-H`; the old spelling
   is gone rather than deprecated, so it now fails with an argparse error
   instead of silently doing something else.
+- **Breaking:** Python 3.9 is no longer supported; 1.0.0 requires Python 3.10
+  or newer. 3.9 reached end of life in October 2025. On 3.9, `pip` keeps
+  installing `0.16.1`, since it honors the package's `requires-python`.
 
 ### Fixed
 
@@ -151,12 +127,25 @@ the move of error output from stdout to stderr.
     matching how the full-day table renders the repeat.
   - A local hour that **never happens** (spring forward) now exits non-zero
     with an explanation instead of printing an empty table.
+- `TZ` now reliably sets the local timezone when `--local` is not given, so
+  `docker run -e TZ=Europe/Madrid ...` gives the `LOCAL` column you asked for.
+  It used to be read by the C library, which needs the operating system's
+  timezone database: on images without it, such as slim containers, an IANA
+  name was silently misread as a POSIX rule, producing a column labelled
+  `Europe` at UTC+0, and on Windows it was not honored at all. `TZ` is now
+  resolved with the bundled `tzdata`, identically on every platform. Values
+  that are not IANA names, such as POSIX rule strings, still fall back to the
+  machine's timezone, and `--local` wins when both are set.
+- `--search` with no matches prints `Found 0 timezones` instead of ending the
+  line with a dangling `: `.
 
 ### Notes
 
-- Installation and Docker usage are unchanged: `pip install -U
-  timezone-converter`, or `docker run --rm -t bledy/timezone-converter
-  <timezone> [<timezone> ...]`.
+- Installation is unchanged on Python 3.10+: `pip install -U
+  timezone-converter`. With Docker, pass your timezone so the `LOCAL` column
+  is not UTC: `docker run --rm -t -e TZ=Europe/Madrid
+  bledy/timezone-converter <timezone> [<timezone> ...]`. The image is now
+  based on Debian trixie.
 - The comparison table already spanned the real local day (23, 24, or 25
   hours) across DST changes as of `v0.16.1`; `1.0.0` extends that same
   correctness to single-hour selection.
