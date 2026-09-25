@@ -52,6 +52,8 @@ their notes.
   set by `--local` or `TZ`. It used to take the machine's own hour, so on a
   UTC host `--local kiritimati --hour` showed the 10:00 row while it was
   00:34 in Kiritimati, on the next calendar day.
+- `--search` with no matches prints `Found 0 timezones` instead of ending the
+  line with a dangling `: `.
 
 ## [1.0.0] - 2026-09-20
 
