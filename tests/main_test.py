@@ -6,6 +6,7 @@ from importlib import metadata
 import pytest
 
 from timezone_converter import main as main_module
+from timezone_converter.comparison_view import CURRENT_HOUR
 from timezone_converter.main import _date_value
 from timezone_converter.main import _hour_value
 from timezone_converter.main import _list_letter
@@ -64,6 +65,19 @@ def test_invalid_hour_exits_two_with_message_on_stderr(capsys):
         build_parser().parse_args(['--hour', '24'])
     assert exit_info.value.code == 2
     assert 'between 00 and 23' in capsys.readouterr().err
+
+
+def test_hour_without_a_value_defers_to_the_view():
+    # The current hour depends on the local zone, which the parser does not
+    # know yet, so it must not fill in the machine's hour itself.
+    args = build_parser().parse_args(['new_york', '--hour'])
+    assert args.hour == CURRENT_HOUR
+
+
+def test_hour_rejects_the_current_hour_marker():
+    # The marker must stay unreachable from the command line.
+    with pytest.raises(argparse.ArgumentTypeError):
+        _hour_value(str(CURRENT_HOUR))
 
 
 def test_invalid_list_letter_exits_two_with_message_on_stderr(capsys):

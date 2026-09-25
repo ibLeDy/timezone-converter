@@ -9,6 +9,7 @@ from typing import Sequence
 from typing import Union
 
 from timezone_converter.comparison_view import ComparisonView
+from timezone_converter.comparison_view import CURRENT_HOUR
 from timezone_converter.constants import distribution_version
 from timezone_converter.list_view import ListView
 from timezone_converter.search_view import SearchView
@@ -132,7 +133,7 @@ def build_parser() -> argparse.ArgumentParser:
         '--hour',
         nargs='?',
         type=_hour_value,
-        const=datetime.now().hour,
+        const=CURRENT_HOUR,
         metavar='HOUR',
         dest='hour',
         help='show a single hour',
