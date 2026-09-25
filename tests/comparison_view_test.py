@@ -782,3 +782,25 @@ def test_unresolvable_tz_leaves_the_machine_timezone_in_charge(monkeypatch):
     # the view must still build rather than fail on it.
     monkeypatch.setenv('TZ', 'CET-1CEST,M3.5.0,M10.5.0/3')
     assert _make_view(['new_york'], hour=12).print_table() == 0
+
+
+def test_tz_fills_in_the_local_zone_when_local_flag_is_absent(monkeypatch):
+    monkeypatch.setenv('TZ', 'Europe/Madrid')
+    assert _make_view(['new_york']).local_zone == ZoneInfo('Europe/Madrid')
+
+
+def test_local_flag_wins_over_tz(monkeypatch):
+    # An explicit flag is the more specific request, so it beats the
+    # environment.
+    monkeypatch.setenv('TZ', 'Europe/Madrid')
+    assert _make_view(['new_york'], local='tokyo').local_zone == ZoneInfo(
+        'Asia/Tokyo',
+    )
+
+
+def test_json_reports_the_zone_named_by_tz(monkeypatch):
+    # Unlike the machine zone, which is only a UTC offset, ``TZ`` names a
+    # zone, so the payload can report it just as it does for --local.
+    monkeypatch.setenv('TZ', 'Europe/Madrid')
+    payload = _make_view(['new_york'], output_format='json')._build_payload()
+    assert payload['columns'][0]['zone'] == 'Europe/Madrid'

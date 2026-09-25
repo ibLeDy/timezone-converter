@@ -19,7 +19,7 @@ RUN : \
     && :
 
 # A container has no timezone of its own. Left unset, the LOCAL column is
-# UTC; pass one at run time with `docker run -e TZ=Europe/Madrid ...`.
-# The name is resolved through the bundled tzdata wheel, so the image does
-# not need the operating system timezone database.
+# UTC; pass one at run time with `docker run -e TZ=Europe/Madrid ...` or
+# `--local`. TZ is resolved through the bundled tzdata wheel, so the image
+# does not need the operating system timezone database.
 ENTRYPOINT [ "timezone-converter" ]

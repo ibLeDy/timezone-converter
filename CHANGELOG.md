@@ -37,6 +37,18 @@ their notes.
   path. It goes to stderr and the resolution is unchanged, so scripts and
   pipes are unaffected.
 
+### Fixed
+
+- `TZ` now reliably sets the local timezone when `--local` is not given, so
+  `docker run -e TZ=Europe/Madrid ...` gives the `LOCAL` column you asked for.
+  It used to be read by the C library, which needs the operating system's
+  timezone database: on images without it, such as slim containers, an IANA
+  name was silently misread as a POSIX rule, producing a column labelled
+  `Europe` at UTC+0, and on Windows it was not honored at all. `TZ` is now
+  resolved with the bundled `tzdata`, identically on every platform. Values
+  that are not IANA names, such as POSIX rule strings, still fall back to the
+  machine's timezone, and `--local` wins when both are set.
+
 ## [1.0.0] - 2026-09-20
 
 First stable release. Everything below has been sitting on `main` since
