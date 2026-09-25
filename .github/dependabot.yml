@@ -3,10 +3,18 @@ version: 2
 updates:
   # Action versions are the supply-chain surface that moves fastest, and a
   # stale pinned action is the one most likely to break a release.
+  #
+  # Grouped into one PR: one PR per action hit Dependabot's limit of five
+  # open PRs, which held the rest back, and each merge left the others
+  # behind main.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     commit-message:
       prefix: ci
     labels:

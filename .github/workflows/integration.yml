@@ -12,8 +12,21 @@ jobs:
   # The image used to be built only by deployment.yml, after a GitHub Release
   # had been published, so a broken Dockerfile or base image stopped a release
   # halfway. Build and smoke test it here first, with the same script.
+  #
+  # The release publishes arm64 as well as amd64, so both are built and run
+  # here, each natively on a runner of its own architecture; the release job
+  # only ever ran the amd64 one.
   docker:
-    runs-on: ubuntu-latest
+    name: docker (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
 
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +38,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64
+          platforms: linux/${{ matrix.arch }}
           load: true
           push: false
           tags: timezone-converter:ci
