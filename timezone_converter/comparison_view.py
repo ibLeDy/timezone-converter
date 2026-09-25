@@ -1,8 +1,12 @@
+import json
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone as datetime_timezone
 from datetime import tzinfo
 from difflib import get_close_matches
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -14,13 +18,10 @@ from timezone_converter.helper import local_timezone
 
 
 def _to_local(instant: datetime) -> datetime:
-    # Single seam for the machine-local conversion. ``TZ`` wins when it names
-    # an IANA zone, so containers (which have no timezone of their own) get a
-    # meaningful LOCAL column; otherwise the no-argument ``astimezone`` tracks
-    # the machine's own zone, including DST. Tests monkeypatch this to pin a
-    # specific zone across platforms (``time.tzset`` is POSIX only).
-    zone = local_timezone()
-    return instant.astimezone() if zone is None else instant.astimezone(zone)
+    # Single seam for the machine-local conversion. Production uses the
+    # no-argument ``astimezone`` so it tracks DST; tests monkeypatch this to
+    # pin a specific zone across platforms (``time.tzset`` is POSIX only).
+    return instant.astimezone()
 
 
 class ComparisonView(Helper):
@@ -39,6 +40,9 @@ class ComparisonView(Helper):
         hour: Optional[int],
         order: bool,
         difference: bool,
+        day: Optional[date] = None,
+        local: Optional[str] = None,
+        output_format: str = 'table',
     ) -> None:
         """Resolve the requested timezones and prepare the comparison state.
 
@@ -60,38 +64,57 @@ class ComparisonView(Helper):
         difference : bool
             If ``True``, append each foreign column's signed hour offset
             from the local timezone to the header (e.g. ``+5h``).
+        day : Optional[date]
+            The local calendar day to compare. Defaults to today.
+        local : Optional[str]
+            Timezone to treat as local, overriding the machine's own. Given
+            in the same forms as `timezones`.
+        output_format : str
+            ``'table'`` for the Rich table, or ``'json'`` for a
+            machine-readable payload on stdout.
 
         Raises
         ------
         SystemExit
-            If a timezone name in `timezones` cannot be resolved.
+            If a timezone name in `timezones` or `local` cannot be resolved.
         """
         self.zone = zone
         self.hour = hour
         self.difference = difference
+        self.output_format = output_format
 
-        # ``base_instant`` has to be midnight in the same zone ``_to_local``
-        # renders, or the table would be built around a different day than the
-        # one it displays. Both consult ``TZ`` the same way.
-        local_zone = local_timezone()
-        if local_zone is None:
-            current_dt = datetime.now()
-            self.base_instant = datetime(
-                current_dt.year,
-                current_dt.month,
-                current_dt.day,
-            ).astimezone()
+        # ``None`` keeps the machine's own timezone, tracked through
+        # ``_to_local``. An override is resolved the same way a foreign zone
+        # is, so a typo gets the same suggestions and the same exit code.
+        self.local_zone: Optional[tzinfo] = None
+        if local is not None:
+            self.local_zone = ZoneInfo(self._get_timezone_name(local))
         else:
-            current_dt = datetime.now(local_zone)
-            self.base_instant = datetime(
-                current_dt.year,
-                current_dt.month,
-                current_dt.day,
-                tzinfo=local_zone,
-            )
+            # Without --local, ``TZ`` names the local zone when it holds an IANA
+            # name, which is how a container is usually told its timezone.
+            # Resolving it here, rather than leaving it to the C library behind
+            # ``astimezone``, keeps it working on images without the OS
+            # timezone database; see ``helper.local_timezone``.
+            self.local_zone = local_timezone()
 
-        # ``None`` represents the local timezone; it is rendered with the
-        # no-argument ``astimezone`` so it tracks DST at each instant.
+        # Local midnight of the day being compared, in whichever zone counts
+        # as local. For the machine's own zone, ``astimezone`` on a naive
+        # datetime resolves it against the rules in force on that date, so a
+        # past or future day gets that day's offset rather than today's.
+        chosen_day = day if day is not None else self._today()
+        naive_midnight = datetime(
+            chosen_day.year,
+            chosen_day.month,
+            chosen_day.day,
+        )
+        if self.local_zone is None:
+            self.base_instant = naive_midnight.astimezone()
+        else:
+            self.base_instant = naive_midnight.replace(tzinfo=self.local_zone)
+
+        # ``None`` represents the local column; it is rendered through
+        # ``_to_local`` so it tracks DST at each instant, whether that means
+        # the machine's zone or the ``--local`` override.
         self.zones: List[Optional[tzinfo]] = [None]
 
         for timezone in timezones:
@@ -101,6 +124,22 @@ class ComparisonView(Helper):
         if order:
             self._sort_timezone_display()
 
+    def _today(self) -> date:
+        # "Today" is a local notion, so an overridden local zone decides it
+        # too: on a UTC host comparing against Europe/Madrid, the day to show
+        # is Madrid's, which is the point of the override.
+        if self.local_zone is None:
+            return datetime.now().date()
+        return datetime.now(self.local_zone).date()
+
+    def _to_local(self, instant: datetime) -> datetime:
+        # Routes every "what does this instant look like locally" question
+        # through one place, so the override applies to the LOCAL column, to
+        # the day boundaries and to wall-clock hour selection alike.
+        if self.local_zone is None:
+            return _to_local(instant)
+        return instant.astimezone(self.local_zone)
+
     def _convert(
         self,
         zone: Optional[tzinfo],
@@ -108,7 +147,7 @@ class ComparisonView(Helper):
     ) -> datetime:
         if instant is None:
             instant = self.base_instant
-        return _to_local(instant) if zone is None else instant.astimezone(zone)
+        return self._to_local(instant) if zone is None else instant.astimezone(zone)
 
     def _offset(self, zone: Optional[tzinfo]) -> timedelta:
         # Aware datetimes always report an offset; ``or`` only narrows the type.
@@ -121,30 +160,51 @@ class ComparisonView(Helper):
     def _get_timezone_name(self, timezone: str) -> str:
         timezone_name = self.resolve_timezone(timezone)
         if timezone_name is None:
+            # One shape for every failure here: the message always goes
+            # through Rich on stderr, and the exit is always ``SystemExit(1)``.
+            # ``SystemExit(str)`` would print the message itself and exit 1 as
+            # well, but bypasses Rich and leaves two different code paths for
+            # what is one error.
             error_msg = f'error: {timezone !r} is not an available timezone'
+            self._print_error_with_rich(error_msg)
             possible_matches: List[str] = get_close_matches(
                 timezone.lower(),
                 self.searchable_timezones,
                 n=5,
             )
-            if len(possible_matches) == 0:
-                raise SystemExit(error_msg)
-            table = Table()
-            table.add_column('Closest matches')
-            for match in possible_matches:
-                table.add_row(match)
-            self._print_with_rich(error_msg)
-            self._print_with_rich(table)
+            if possible_matches:
+                table = Table()
+                table.add_column('Closest matches')
+                for match in possible_matches:
+                    table.add_row(match)
+                self._print_error_with_rich(table)
             raise SystemExit(1)
+
+        # A short name that several zones share resolves to exactly one of
+        # them, and which one is an implementation detail of the lookup
+        # table. Say so, on stderr so it cannot pollute piped output, rather
+        # than letting the wrong city look like the right answer.
+        alternatives = self.ambiguous_alternatives(timezone)
+        if alternatives:
+            others = ', '.join(name for name in alternatives if name != timezone_name)
+            self._print_error_with_rich(
+                f'warning: {timezone !r} matches {len(alternatives)} timezones; '
+                f'using {timezone_name !r}. Give a full path for: {others}',
+            )
         return timezone_name
 
-    def _format_difference(self, zone: Optional[tzinfo]) -> str:
+    def _difference_hours(self, zone: Optional[tzinfo]) -> float:
         # Signed hours relative to the local offset, evaluated at the same
         # ``base_instant`` used for ``--zone``'s tzname, so the two flags stay
-        # consistent across DST transitions. Zero-pad the decimal only when
-        # the difference is not a whole number (e.g. ``+9.5h`` but ``-5h``,
-        # never ``-5.0h``) to keep the format compact and predictable.
-        diff_hours = (self._offset(zone) - self._offset(None)).total_seconds() / 3600
+        # consistent across DST transitions. The table and the JSON payload
+        # both read this, so there is one definition of the difference.
+        return (self._offset(zone) - self._offset(None)).total_seconds() / 3600
+
+    def _format_difference(self, zone: Optional[tzinfo]) -> str:
+        # Zero-pad the decimal only when the difference is not a whole number
+        # (e.g. ``+9.5h`` but ``-5h``, never ``-5.0h``) to keep the format
+        # compact and predictable.
+        diff_hours = self._difference_hours(zone)
         if diff_hours.is_integer():
             return f'{diff_hours:+.0f}h'
         formatted = f'{diff_hours:+.2f}'.rstrip('0').rstrip('.')
@@ -172,11 +232,11 @@ class ComparisonView(Helper):
         # spill into the next day (spring forward) or drop the last hour (fall
         # back). Stepping absolute UTC instants keeps each conversion DST-aware.
         base_utc = self.base_instant.astimezone(datetime_timezone.utc)
-        base_date = _to_local(self.base_instant).date()
+        base_date = self._to_local(self.base_instant).date()
         instants: List[datetime] = []
         hour = 0
         instant = base_utc
-        while _to_local(instant).date() == base_date:
+        while self._to_local(instant).date() == base_date:
             instants.append(instant)
             hour += 1
             instant = base_utc + timedelta(hours=hour)
@@ -195,16 +255,18 @@ class ComparisonView(Helper):
         # A fall-back day repeats a local hour, so this can legitimately match
         # twice; both instants are shown, matching the full-day table.
         matching = [
-            instant for instant in instants if _to_local(instant).hour == self.hour
+            instant for instant in instants if self._to_local(instant).hour == self.hour
         ]
         if not matching:
             # A spring-forward day skips a local hour entirely; there is no
             # instant to show, so say so instead of rendering an empty table.
-            raise SystemExit(
+            self._print_error_with_rich(
                 f'error: {self.hour:02d}:00 does not exist on '
-                f'{_to_local(self.base_instant).date()} in your local timezone, '
+                f'{self._to_local(self.base_instant).date()} in your local '
+                'timezone, '
                 'the clocks skip forward over it',
             )
+            raise SystemExit(1)
         return matching
 
     def _build_table(self) -> Table:
@@ -227,13 +289,60 @@ class ComparisonView(Helper):
 
         return table
 
+    def _zone_name(self, zone: Optional[tzinfo]) -> Optional[str]:
+        # The IANA name, where there is one to report. The machine's own zone
+        # is reached through ``astimezone()``, which yields a fixed-offset
+        # tzinfo rather than a named zone, so ``null`` is the honest answer
+        # there instead of an abbreviation masquerading as a zone name.
+        if zone is not None:
+            return str(zone)
+        return None if self.local_zone is None else str(self.local_zone)
+
+    def _build_payload(self) -> Dict[str, Any]:
+        instants = self._selected_instants()
+        now = datetime.now().astimezone()
+        return {
+            'date': self._to_local(self.base_instant).date().isoformat(),
+            'columns': [
+                {
+                    'label': 'LOCAL' if zone is None else str(zone).upper(),
+                    'zone': self._zone_name(zone),
+                    'abbreviation': self._convert(zone).tzname(),
+                    'difference_hours': self._difference_hours(zone),
+                }
+                for zone in self.zones
+            ],
+            'rows': [
+                {
+                    'current': instant <= now < instant + timedelta(hours=1),
+                    # ISO-8601 with the offset, unlike the table's display
+                    # format: a consumer needs the offset to know which
+                    # instant a repeated fall-back hour refers to.
+                    'times': [
+                        self._convert(zone, instant).isoformat() for zone in self.zones
+                    ],
+                }
+                for instant in instants
+            ],
+        }
+
     def print_table(self) -> int:
-        """Print the comparison table to the console.
+        """Print the comparison to the console.
+
+        Renders the Rich table, or the JSON payload when the view was
+        built with ``output_format='json'``.
 
         Returns
         -------
         int
             Always ``0``.
         """
+        if self.output_format == 'json':
+            # Deliberately not routed through Rich: its wrapping and
+            # highlighting would corrupt output whose whole purpose is to be
+            # parsed by something else.
+            self._print_plain(json.dumps(self._build_payload(), indent=2))
+            return 0
+
         self._print_with_rich(self._build_table())
         return 0

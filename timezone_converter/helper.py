@@ -115,3 +115,42 @@ class Helper:
     @staticmethod
     def _print_with_rich(obj: Union[str, Columns, Table]) -> None:
         Console().print(obj)
+
+    @classmethod
+    def ambiguous_alternatives(cls, name: str) -> List[str]:
+        """List the canonical paths a short timezone name could mean.
+
+        Parameters
+        ----------
+        name : str
+            A timezone name as typed by the user.
+
+        Returns
+        -------
+        List[str]
+            Every canonical IANA path sharing `name` as its last path
+            segment, sorted, when there is more than one; otherwise an
+            empty list. A name given as a full canonical path is never
+            ambiguous, since it already says which zone is meant.
+        """
+        key = name.lower()
+        if key in cls._canonical_paths or key not in _AMBIGUOUS_SEGMENTS:
+            return []
+        return sorted(
+            timezone
+            for timezone in _ALL_TIMEZONES
+            if timezone.lower().split('/')[-1] == key
+        )
+
+    @staticmethod
+    def _print_plain(text: str) -> None:
+        # The one output that must not go through Rich: machine-readable
+        # payloads, where wrapping, highlighting or markup interpretation
+        # would corrupt what a consumer has to parse.
+        print(text)
+
+    @staticmethod
+    def _print_error_with_rich(obj: Union[str, Columns, Table]) -> None:
+        # Errors belong on stderr so a caller can redirect or pipe the real
+        # output without swallowing the reason it is empty.
+        Console(stderr=True).print(obj)

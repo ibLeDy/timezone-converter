@@ -1,3 +1,5 @@
+import json
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone as datetime_timezone
@@ -15,8 +17,20 @@ def _make_view(
     hour=None,
     order=False,
     difference=False,
+    day=None,
+    local=None,
+    output_format='table',
 ):
-    return ComparisonView(list(timezones), zone, hour, order, difference)
+    return ComparisonView(
+        list(timezones),
+        zone,
+        hour,
+        order,
+        difference,
+        day,
+        local,
+        output_format,
+    )
 
 
 @pytest.fixture
@@ -49,14 +63,67 @@ def test_resolves_valid_timezone_to_canonical_zone():
     assert str(view.zones[1]) == 'America/New_York'
 
 
-def test_unknown_timezone_with_suggestions_exits():
-    with pytest.raises(SystemExit):
+def test_unknown_timezone_with_suggestions_exits(capsys):
+    with pytest.raises(SystemExit) as exit_info:
         _make_view(['new_yrk'])
 
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert 'not an available timezone' in captured.err
+    assert 'Closest matches' in captured.err
+    assert captured.out == ''
 
-def test_unknown_timezone_without_suggestions_exits():
-    with pytest.raises(SystemExit):
+
+def test_unknown_timezone_without_suggestions_exits(capsys):
+    # Same contract as the suggestions path: Rich, stderr, SystemExit(1).
+    # This branch used to raise SystemExit(str), which exits 1 too but
+    # prints the message itself, bypassing Rich.
+    with pytest.raises(SystemExit) as exit_info:
         _make_view(['zzzzzzzzzz'])
+
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert 'not an available timezone' in captured.err
+    assert 'Closest matches' not in captured.err
+    assert captured.out == ''
+
+
+def test_ambiguous_short_name_warns_but_still_resolves(capsys):
+    view = _make_view(['istanbul'])
+
+    captured = capsys.readouterr()
+    assert str(view.zones[1]) == 'Europe/Istanbul'
+    assert 'warning' in captured.err
+    assert 'istanbul' in captured.err
+    assert 'Asia/Istanbul' in captured.err
+    # The warning must not reach stdout, where it would corrupt a piped
+    # table or a --format json payload.
+    assert captured.out == ''
+
+
+def test_ambiguous_warning_leaves_json_output_parseable(capsys):
+    view = _make_view(['istanbul'], output_format='json')
+    capsys.readouterr()
+
+    assert view.print_table() == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)['columns'][1]['zone'] == 'Europe/Istanbul'
+
+
+def test_a_full_path_does_not_warn(capsys):
+    _make_view(['asia/istanbul'])
+    assert capsys.readouterr().err == ''
+
+
+def test_an_unambiguous_short_name_does_not_warn(capsys):
+    _make_view(['new_york'])
+    assert capsys.readouterr().err == ''
+
+
+def test_an_ambiguous_local_override_warns_too(capsys):
+    view = _make_view(['london'], local='istanbul')
+    assert str(view.local_zone) == 'Europe/Istanbul'
+    assert 'warning' in capsys.readouterr().err
 
 
 def test_base_instant_is_local_midnight_today(monkeypatch):
@@ -258,6 +325,264 @@ def test_difference_reflects_dst_before_and_after_fall_back(local_timezone):
     assert view._get_headers()[1] == 'ASIA/CALCUTTA +10.5h'
 
 
+def test_date_sets_the_compared_day_to_local_midnight():
+    view = _make_view(['london'], day=date(2026, 3, 8))
+    assert view.base_instant.timetuple()[:5] == (2026, 3, 8, 0, 0)
+    assert view.base_instant.tzinfo is not None
+
+
+def test_no_date_compares_today():
+    view = _make_view(['london'])
+    assert view.base_instant.date() == datetime.now().date()
+
+
+# The constructor builds local midnight with the machine's own timezone,
+# which tests cannot pin portably (``time.tzset`` is POSIX only). Attaching
+# the pinned zone to the instant the constructor produced keeps the wall
+# clock it derived from ``day`` while making the zone deterministic, so
+# these still exercise the value that ``--date`` passed in.
+def _view_for_day(local_timezone, day):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['london'], day=day)
+    view.base_instant = view.base_instant.replace(tzinfo=zone)
+    return view
+
+
+def test_date_on_a_spring_forward_day_builds_a_23_hour_table(local_timezone):
+    view = _view_for_day(local_timezone, date(2026, 3, 8))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 23
+    assert all(cell.startswith('2026-03-08') for cell in cells)
+
+
+def test_date_on_a_fall_back_day_builds_a_25_hour_table(local_timezone):
+    view = _view_for_day(local_timezone, date(2026, 11, 1))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 25
+    assert all(cell.startswith('2026-11-01') for cell in cells)
+
+
+def test_date_combines_with_hour_selection(local_timezone):
+    # --date picks the day, --hour picks the wall-clock hour within it; the
+    # spring-forward gap still has to be reported rather than rendered empty.
+    view = _view_for_day(local_timezone, date(2026, 3, 8))
+    view.hour = 14
+    assert list(view._build_table().columns[0]._cells) == ['2026-03-08 14:00']
+
+
+def test_date_on_a_spring_forward_day_still_rejects_the_skipped_hour(
+    local_timezone,
+    capsys,
+):
+    view = _view_for_day(local_timezone, date(2026, 3, 8))
+    view.hour = 2
+    with pytest.raises(SystemExit) as exit_info:
+        view._build_table()
+
+    assert exit_info.value.code == 1
+    assert 'does not exist' in capsys.readouterr().err
+
+
+# ``--local`` pins the local zone through the CLI itself, so these need no
+# monkeypatching: they exercise the real construction path end to end, which
+# is exactly the Docker-host-on-UTC case the flag exists for.
+def test_local_override_sets_the_local_column_and_midnight():
+    view = _make_view(['tokyo'], local='new_york', day=date(2026, 6, 1))
+    cells = list(view._build_table().columns[0]._cells)
+    assert cells[0] == '2026-06-01 00:00'
+    assert len(cells) == 24
+
+
+def test_local_override_spring_forward_day_is_23_hours():
+    view = _make_view(['london'], local='new_york', day=date(2026, 3, 8))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 23
+    assert all(cell.startswith('2026-03-08') for cell in cells)
+
+
+def test_local_override_fall_back_day_is_25_hours():
+    view = _make_view(['london'], local='new_york', day=date(2026, 11, 1))
+    cells = list(view._build_table().columns[0]._cells)
+    assert len(cells) == 25
+    assert all(cell.startswith('2026-11-01') for cell in cells)
+
+
+def test_local_override_drives_wall_clock_hour_selection():
+    view = _make_view(['london'], local='new_york', hour=14, day=date(2026, 3, 8))
+    assert list(view._build_table().columns[0]._cells) == ['2026-03-08 14:00']
+
+
+def test_local_override_repeats_a_fall_back_hour():
+    view = _make_view(['london'], local='new_york', hour=1, day=date(2026, 11, 1))
+    assert list(view._build_table().columns[0]._cells) == [
+        '2026-11-01 01:00',
+        '2026-11-01 01:00',
+    ]
+
+
+def test_local_override_rejects_an_hour_it_skips(capsys):
+    view = _make_view(['london'], local='new_york', hour=2, day=date(2026, 3, 8))
+    with pytest.raises(SystemExit) as exit_info:
+        view._build_table()
+
+    assert exit_info.value.code == 1
+    assert 'does not exist' in capsys.readouterr().err
+
+
+def test_local_override_shows_its_abbreviation_with_zone():
+    view = _make_view(['london'], local='new_york', zone=True, day=date(2026, 6, 1))
+    assert view._get_headers()[0] == 'LOCAL (EDT)'
+
+
+def test_local_override_is_the_baseline_for_difference():
+    # New York is UTC-4 on this date and Tokyo UTC+9, so Tokyo reads +13h
+    # from an overridden New York local rather than from the machine's zone.
+    view = _make_view(
+        ['tokyo'],
+        local='new_york',
+        difference=True,
+        day=date(2026, 6, 1),
+    )
+    assert view._get_headers()[1] == 'ASIA/TOKYO +13h'
+
+
+def test_local_override_accepts_a_canonical_path():
+    view = _make_view(['london'], local='America/New_York', day=date(2026, 6, 1))
+    assert str(view.local_zone) == 'America/New_York'
+
+
+def test_unknown_local_override_exits(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        _make_view(['london'], local='zzzzzzzzzz')
+
+    assert exit_info.value.code == 1
+    assert 'not an available timezone' in capsys.readouterr().err
+
+
+def test_no_local_override_leaves_the_machine_zone_in_charge():
+    view = _make_view(['london'])
+    assert view.local_zone is None
+
+
+def test_local_override_decides_what_today_means():
+    # "Today" has to be read in the overridden zone, otherwise a UTC host
+    # comparing against Kiritimati (UTC+14) would show yesterday's date.
+    view = _make_view(['london'], local='kiritimati')
+    assert (
+        view.base_instant.date() == datetime.now(ZoneInfo('Pacific/Kiritimati')).date()
+    )
+
+
+def _payload(capsys, **kwargs):
+    assert _make_view(output_format='json', **kwargs).print_table() == 0
+    captured = capsys.readouterr()
+    assert captured.err == ''
+    return json.loads(captured.out)
+
+
+def test_json_output_is_parseable_and_not_rich_formatted(capsys):
+    # The point of the format: Rich's wrapping, highlighting and markup
+    # would all corrupt output whose job is to be parsed.
+    payload = _payload(
+        capsys,
+        timezones=['tijuana'],
+        local='new_york',
+        day=date(2026, 6, 1),
+    )
+    assert payload['date'] == '2026-06-01'
+    assert [column['label'] for column in payload['columns']] == [
+        'LOCAL',
+        'AMERICA/TIJUANA',
+    ]
+    assert len(payload['rows']) == 24
+
+
+def test_json_columns_carry_zone_abbreviation_and_difference(capsys):
+    payload = _payload(
+        capsys,
+        timezones=['tokyo'],
+        local='new_york',
+        day=date(2026, 6, 1),
+    )
+    local_column, tokyo = payload['columns']
+    assert local_column['zone'] == 'America/New_York'
+    assert local_column['abbreviation'] == 'EDT'
+    assert local_column['difference_hours'] == 0.0
+    assert tokyo['zone'] == 'Asia/Tokyo'
+    assert tokyo['difference_hours'] == 13.0
+
+
+def test_json_reports_no_zone_name_for_the_machine_timezone(capsys):
+    # ``astimezone()`` yields a fixed-offset tzinfo, not a named zone, so
+    # null is the honest answer rather than an abbreviation pretending to
+    # be an IANA name.
+    payload = _payload(capsys, timezones=['tokyo'], day=date(2026, 6, 1))
+    assert payload['columns'][0]['zone'] is None
+    assert payload['columns'][0]['abbreviation'] is not None
+
+
+def test_json_times_are_iso_8601_with_offsets(capsys):
+    payload = _payload(
+        capsys,
+        timezones=['tijuana'],
+        local='new_york',
+        hour=12,
+        day=date(2026, 6, 1),
+    )
+    assert payload['rows'][0]['times'] == [
+        '2026-06-01T12:00:00-04:00',
+        '2026-06-01T09:00:00-07:00',
+    ]
+
+
+def test_json_spring_forward_day_has_23_rows(capsys):
+    payload = _payload(
+        capsys,
+        timezones=['london'],
+        local='new_york',
+        day=date(2026, 3, 8),
+    )
+    assert len(payload['rows']) == 23
+
+
+def test_json_fall_back_day_has_25_rows_with_distinct_offsets(capsys):
+    # The repeated local hour is the reason times carry their offset: the
+    # two 01:00 rows are only distinguishable by -04:00 versus -05:00.
+    payload = _payload(
+        capsys,
+        timezones=['london'],
+        local='new_york',
+        day=date(2026, 11, 1),
+    )
+    assert len(payload['rows']) == 25
+    repeated = [
+        row['times'][0]
+        for row in payload['rows']
+        if row['times'][0].startswith('2026-11-01T01:00')
+    ]
+    assert repeated == [
+        '2026-11-01T01:00:00-04:00',
+        '2026-11-01T01:00:00-05:00',
+    ]
+
+
+def test_json_marks_the_current_hour(capsys):
+    payload = _payload(capsys, timezones=['london'])
+    assert sum(row['current'] for row in payload['rows']) == 1
+
+
+def test_json_does_not_mark_a_current_hour_on_another_day(capsys):
+    payload = _payload(capsys, timezones=['london'], day=date(2026, 6, 1))
+    assert not any(row['current'] for row in payload['rows'])
+
+
+def test_table_remains_the_default(capsys):
+    view = _make_view(['london'])
+    assert view.output_format == 'table'
+    assert view.print_table() == 0
+    assert 'LOCAL' in capsys.readouterr().out
+
+
 def test_hour_builds_one_row():
     view = _make_view(['new_york'], hour=9)
     assert len(view._build_table().rows) == 1
@@ -302,11 +627,17 @@ def test_hour_shows_both_instants_of_a_repeated_local_hour(local_timezone):
     ]
 
 
-def test_hour_skipped_by_spring_forward_exits(local_timezone):
+def test_hour_skipped_by_spring_forward_exits(local_timezone, capsys):
     # 02:00 never happens on this date; an empty table would be misleading.
+    # Same error contract as an unknown timezone: Rich, stderr, SystemExit(1).
     zone = local_timezone('America/New_York')
-    with pytest.raises(SystemExit, match='does not exist'):
+    with pytest.raises(SystemExit) as exit_info:
         _hour_column((2026, 3, 8), zone, 2)
+
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert 'does not exist' in captured.err
+    assert captured.out == ''
 
 
 def test_current_hour_row_is_highlighted():

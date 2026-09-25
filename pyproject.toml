@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "timezone-converter"
-version = "0.16.1"
+version = "1.0.0"
 description = "Compare your local timezone with foreign ones."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -15,7 +15,7 @@ authors = [
     { name = "Iago Alonso", email = "deejaynof@gmail.com" },
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
@@ -29,6 +29,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Terminals",
     "Topic :: Utilities",
@@ -38,6 +39,16 @@ requires-python = ">=3.9"
 dependencies = [
     "rich>=15.0.0",
     "tzdata>=2026.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "covdefaults",
+    "coverage",
+    "pre-commit",
+    "pytest",
+    "tox",
+    "tox-gh-actions",
 ]
 
 [project.scripts]
@@ -82,7 +93,7 @@ plugins = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py39, py310, py311, py312, py313
+envlist = py39, py310, py311, py312, py313, py314
 isolated_build = True
 
 [gh-actions]
@@ -92,6 +103,7 @@ python =
     3.11: py311
     3.12: py312
     3.13: py313
+    3.14: py314
 
 [testenv]
 deps =
@@ -111,10 +123,18 @@ commands =
     timezone-converter tijuana new_york --hour
     timezone-converter tijuana --zone
     timezone-converter tijuana new_york --order
+    timezone-converter tijuana --date 2026-03-08
+    timezone-converter tijuana new_york --date 2026-11-01 --zone
+    timezone-converter tijuana --local madrid
+    timezone-converter tijuana --local new_york --date 2026-03-08 --hour 14
+    timezone-converter istanbul
+    timezone-converter tijuana --format json
+    timezone-converter tijuana new_york --format json --local new_york --date 2026-11-01
     timezone-converter tijuana --difference
     timezone-converter tijuana --difference --zone
     timezone-converter --search york
     timezone-converter --list
     timezone-converter --list tbd
     tzconv --version
+    python -m timezone_converter --help
 """

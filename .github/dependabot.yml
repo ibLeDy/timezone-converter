@@ -1,0 +1,25 @@
+version: 2
+
+updates:
+  # Action versions are the supply-chain surface that moves fastest, and a
+  # stale pinned action is the one most likely to break a release.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    labels:
+      - ci
+      - dependencies
+
+  # Runtime and development dependencies move more slowly, and pre-commit.ci
+  # already opens its own monthly autoupdate PR for the hooks.
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
+    labels:
+      - dependencies

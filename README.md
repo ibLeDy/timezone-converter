@@ -68,10 +68,17 @@ Useful flags:
 timezone-converter tijuana new_york --zone
 timezone-converter tijuana new_york --order
 timezone-converter tijuana --hour 14
+timezone-converter tijuana --date 2026-03-08
+timezone-converter tijuana --local madrid
+timezone-converter tijuana --format json
 timezone-converter tijuana --difference
 timezone-converter --search york
 timezone-converter --list tbd
+timezone-converter --version
 ```
+
+`--list`, `--search`, and comparing timezones are three separate modes, so
+only one of them can be used at a time.
 
 ### Docker
 
@@ -79,32 +86,23 @@ timezone-converter --list tbd
 docker run --rm -t -e TZ=Europe/Madrid bledy/timezone-converter <timezone> [<timezone> ...]
 ```
 
-A container has no timezone of its own, so without `-e TZ` the `LOCAL` column
-is UTC. See [Local timezone](#local-timezone) below.
+A container has no timezone of its own, so without `-e TZ` (or `--local`) the
+`LOCAL` column is UTC. See
+[Override your local timezone](#override-your-local-timezone) below.
 
 ## Features
-
-### Local timezone
-
-The `LOCAL` column uses your system timezone. Set the `TZ` environment
-variable to override it, which is how you give a container, a CI runner, or a
-Windows shell a meaningful local timezone:
-
-```bash
-TZ=Europe/Madrid timezone-converter new_york
-```
-
-`TZ` is read with the same timezone database the rest of the tool uses, so an
-IANA name such as `Europe/Madrid` resolves identically on every platform, and
-on minimal container images that ship no system timezone data. If `TZ` is
-unset, or holds something that is not an IANA name (such as a POSIX rule
-string like `CET-1CEST,M3.5.0,M10.5.0/3`), your system timezone is used.
 
 ### Comparison between multiple timezones
 
 Multiple timezones can be provided to get a side-by-side comparison.
 Short timezone names such as `new_york` are supported, as are canonical
 timezone paths such as `America/New_York`.
+
+A few short names are shared by more than one zone, such as `istanbul`,
+which is both `Asia/Istanbul` and `Europe/Istanbul`. One of them is picked,
+and a warning on stderr names the alternatives so you can give a full path
+instead. The warning never touches the table itself, so piping the output
+stays safe.
 
 ### Current hour highlighting
 
@@ -137,10 +135,90 @@ still refers to the hour you actually see on the clock. When your clocks fall
 back, the repeated hour happens twice and both instants are shown. When they
 spring forward, the skipped hour never happens, and asking for it is an error.
 
+### Compare another day
+
+Using the `--date` argument, you can compare a different local calendar day
+instead of today, given as `YYYY-MM-DD`. The day is built from that date's
+own timezone rules, so a day on which your clocks change still shows its
+real 23 or 25 hours rather than today's offset applied to another date.
+
+### Override your local timezone
+
+Using the `--local` argument, you can pick which timezone the `LOCAL` column
+represents, instead of the one your machine is set to. It accepts the same
+names as any other timezone argument.
+
+This matters when the machine's clock is not the one you care about, such as
+inside a Docker container, where the host is usually set to UTC. Everything
+follows the override: which day is "today", where midnight falls, which hour
+`--hour` selects, and what `--difference` measures from.
+
+Without `--local`, the `TZ` environment variable is honored the same way, which
+is the usual way to give a container, a CI runner, or a Windows shell a local
+timezone:
+
+```bash
+TZ=Europe/Madrid timezone-converter new_york
+```
+
+`TZ` is read with the same timezone database the rest of the tool uses, so an
+IANA name such as `Europe/Madrid` resolves identically on every platform, and
+on minimal container images that ship no system timezone data. If `TZ` is
+unset, or holds something that is not an IANA name (such as a POSIX rule
+string like `CET-1CEST,M3.5.0,M10.5.0/3`), your machine's timezone is used.
+When both are set, `--local` wins.
+
+### Machine-readable output
+
+Using `--format json`, a comparison is printed as JSON instead of a table.
+The table remains the default.
+
+Times are ISO-8601 with their UTC offset, rather than the table's display
+format, so the two instants of a repeated fall-back hour stay distinct. Each
+column reports its resolved zone, its abbreviation for the day, and its
+signed hour difference from local, and each row says whether it is the
+current hour.
+
+```json
+{
+  "date": "2026-06-01",
+  "columns": [
+    {
+      "label": "LOCAL",
+      "zone": "America/New_York",
+      "abbreviation": "EDT",
+      "difference_hours": 0.0
+    },
+    {
+      "label": "ASIA/TOKYO",
+      "zone": "Asia/Tokyo",
+      "abbreviation": "JST",
+      "difference_hours": 13.0
+    }
+  ],
+  "rows": [
+    {
+      "current": false,
+      "times": ["2026-06-01T00:00:00-04:00", "2026-06-01T13:00:00+09:00"]
+    }
+  ]
+}
+```
+
+The `zone` of the `LOCAL` column is `null` unless you set `--local` or `TZ`,
+because your machine's timezone is read as a plain UTC offset rather than a
+named zone.
+
 ### Search for a timezone
 
 Using the `--search` argument, you can fuzzy-search for available timezone
 names.
+
+### Version information
+
+Using the `--version` argument, you can see the installed package version
+along with the version of the `tzdata` database it is resolving timezones
+against, e.g. `timezone-converter X.Y.Z (tzdata 2026.4)`.
 
 ### List of available timezones
 

@@ -8,14 +8,15 @@ data comes from `zoneinfo` plus `tzdata`; avoid platform-specific behavior.
 
 ## Commands
 
-- Install: `pip install -e .` and `pip install -r requirements-dev.txt`
+- Install: `pip install -e ".[dev]"` (the `dev` extra mirrors
+  `requirements-dev.txt`, which CI still installs directly)
 - Run: `timezone-converter` or `tzconv` `<timezone> [<timezone> ...]` or
-  `python -m timezone_converter.main`
+  `python -m timezone_converter`
 - Test: `pytest` (or `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` when global
   plugins interfere)
 - Required coverage: `coverage run -m pytest && coverage report` (100%)
 - All hooks: `pre-commit run --all-files`
-- Python 3.9-3.13 matrix and CLI smoke tests: `tox`
+- Python 3.9-3.14 matrix and CLI smoke tests: `tox`
 
 `tox` runs coverage-backed tests and the smoke commands in `pyproject.toml`.
 
@@ -32,14 +33,18 @@ integer exit codes.
 - Preserve short names such as `new_york`, exact paths such as
   `America/New_York`, canonical access to ambiguous short names, useful fuzzy
   suggestions, and nonzero exits for unknown zones.
-- The local timezone comes from `helper.local_timezone()`: `TZ` wins when it
-  names an IANA zone, otherwise the platform's own zone does. Resolve it via
-  `zoneinfo`, never the C library, which needs the OS timezone database that
-  slim images omit and Windows lacks, and silently reads `Europe/Madrid` as a
-  POSIX rule at UTC+0 when that lookup fails. `base_instant` and `_to_local`
-  must always agree on that zone.
-- Route normal output through `Helper._print_with_rich`. Manually exercise Rich
-  layout changes and update stale `.github/assets/` examples.
+- The local zone is `ComparisonView.local_zone`: `--local` first, then `TZ`
+  via `helper.local_timezone()` when it names an IANA zone, else `None`,
+  meaning the machine's own zone through the `_to_local` seam. Resolve `TZ`
+  via `zoneinfo`, never the C library, which needs the OS timezone database
+  that slim images omit and Windows lacks, and silently reads
+  `Europe/Madrid` as a POSIX rule at UTC+0 when that lookup fails.
+- Route normal output through `Helper._print_with_rich`, and errors through
+  `Helper._print_error_with_rich`, which writes to stderr. The one exception is
+  machine-readable output (`--format json`), which uses `Helper._print_plain`
+  because Rich's wrapping and highlighting would corrupt it. Manually exercise
+  Rich layout changes and update stale `.github/assets/` examples with
+  `python scripts/generate_assets.py`, then review the diff before committing.
 
 ## Compatibility and coordinated changes
 
@@ -50,3 +55,15 @@ integer exit codes.
   usage, and tox smoke commands together. Preserve view exit-code contracts.
 - Follow `RELEASE.md` for releases; the project version and release tag must
   match.
+
+## CI
+
+`integration.yml` runs the `tox` matrix on pushes to `main` and on pull
+requests targeting `main`. It no longer triggers on `develop`: that branch
+is fully merged into `main` and has had no unique commits since January
+2025, so the trigger only ever produced duplicate runs. Restore it in
+`integration.yml` if `develop` is ever revived.
+
+`deployment.yml` runs on a published release; see `RELEASE.md` for its job
+order. Dependabot tracks GitHub Actions weekly and pip monthly, and
+pre-commit.ci opens its own monthly hook autoupdate.
