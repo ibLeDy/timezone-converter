@@ -59,6 +59,12 @@ their notes.
   `--format json` with no timezones printed the help text, both on stdout
   with exit code 0, which a script cannot tell apart from JSON output.
 
+### Removed
+
+- **Breaking:** Python 3.9 is no longer supported; 1.0.0 requires Python 3.10
+  or newer. 3.9 reached end of life in October 2025. On 3.9, `pip` keeps
+  installing `0.16.1`, since it honors the package's `requires-python`.
+
 ## [1.0.0] - 2026-09-20
 
 First stable release. Everything below has been sitting on `main` since
