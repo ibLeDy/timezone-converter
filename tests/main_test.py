@@ -318,6 +318,81 @@ def test_table_format_stays_accepted_without_a_comparison(monkeypatch):
     assert recorded['called'] == 'ListView'
 
 
+@pytest.mark.parametrize(
+    ('argv', 'flag'),
+    (
+        (['--zone'], '--zone'),
+        (['--hour'], '--hour'),
+        (['--hour', '9'], '--hour'),
+        (['--date', '2026-01-01'], '--date'),
+        (['--local', 'madrid'], '--local'),
+        (['--order'], '--order'),
+        (['--difference'], '--difference'),
+    ),
+)
+def test_comparison_flag_with_nothing_to_compare_exits_two(
+    monkeypatch,
+    capsys,
+    argv,
+    flag,
+):
+    # Regression: these printed the help text on stdout with exit code 0, so
+    # e.g. ``tzconv --hour 9 $ZONES`` with an empty $ZONES read as success.
+    monkeypatch.setattr('sys.argv', ['tz', *argv])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 2
+    assert f'{flag} only applies to a comparison' in captured.err
+    assert captured.out == ''
+
+
+def test_several_comparison_flags_are_named_together(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['tz', '--zone', '--difference'])
+    with pytest.raises(SystemExit):
+        main()
+    assert '--zone and --difference only apply to a comparison' in (
+        capsys.readouterr().err
+    )
+
+
+@pytest.mark.parametrize(
+    ('argv', 'view', 'method', 'warning'),
+    (
+        (
+            ['--list', 'tbd', '--zone'],
+            'ListView',
+            'print_columns',
+            'warning: --zone only applies to a comparison, ignored',
+        ),
+        (
+            ['--search', 'york', '--local', 'madrid', '--order'],
+            'SearchView',
+            'print_search_results',
+            'warning: --local and --order only apply to a comparison, ignored',
+        ),
+    ),
+)
+def test_comparison_flag_beside_another_mode_warns_and_runs(
+    monkeypatch,
+    capsys,
+    argv,
+    view,
+    method,
+    warning,
+):
+    # The mode still produces exactly what was asked for, so the unused flag
+    # is a warning on stderr, not an error; an alias that bakes in --zone
+    # keeps working for --list.
+    monkeypatch.setattr('sys.argv', ['tz', *argv])
+    recorded = _patch_view(monkeypatch, view, method)
+    assert main() == 0
+    assert recorded['called'] == view
+    captured = capsys.readouterr()
+    assert warning in captured.err
+    assert captured.out == ''
+
+
 def test_modifier_flags_are_not_treated_as_a_second_mode(monkeypatch):
     monkeypatch.setattr('sys.argv', ['tz', 'tijuana', '--zone', '--order'])
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')

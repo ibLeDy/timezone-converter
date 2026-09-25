@@ -89,6 +89,13 @@ error output from stdout to stderr.
 - **Breaking:** a bare `--search` with no word is now an argparse error with
   exit code `2`. It used to print the help text and exit `0`, which reads
   like success.
+- **Breaking:** the flags that modify a comparison (`--zone`, `--hour`,
+  `--date`, `--local`, `--order`, `--difference`) now need at least one
+  timezone. Given without one, they printed the help text and exited `0`, so a
+  script running e.g. `tzconv --hour 9 $ZONES` with an empty `$ZONES` read
+  that as success; it is now an argparse error with exit code `2`. Next to
+  `--list` or `--search`, where the output is still what was asked for, they
+  are ignored as before, now with a warning on stderr.
 - **Breaking:** error output moves from stdout to stderr. An unknown timezone
   printed its message, and its table of closest matches, to stdout, so a
   redirected or piped run captured the error as if it were results. Errors

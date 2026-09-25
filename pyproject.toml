@@ -136,6 +136,7 @@ commands =
     timezone-converter --search york
     timezone-converter --list
     timezone-converter --list tbd
+    timezone-converter --list tbd --zone
     tzconv --version
     python -m timezone_converter --help
 """
