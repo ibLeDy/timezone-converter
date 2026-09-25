@@ -75,7 +75,7 @@ jobs:
         run: scripts/smoke_test_image.sh timezone-converter:smoke
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
