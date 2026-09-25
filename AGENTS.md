@@ -33,6 +33,12 @@ integer exit codes.
 - Preserve short names such as `new_york`, exact paths such as
   `America/New_York`, canonical access to ambiguous short names, useful fuzzy
   suggestions, and nonzero exits for unknown zones.
+- The local zone is `ComparisonView.local_zone`: `--local` first, then `TZ`
+  via `helper.local_timezone()` when it names an IANA zone, else `None`,
+  meaning the machine's own zone through the `_to_local` seam. Resolve `TZ`
+  via `zoneinfo`, never the C library, which needs the OS timezone database
+  that slim images omit and Windows lacks, and silently reads
+  `Europe/Madrid` as a POSIX rule at UTC+0 when that lookup fails.
 - Route normal output through `Helper._print_with_rich`, and errors through
   `Helper._print_error_with_rich`, which writes to stderr. The one exception is
   machine-readable output (`--format json`), which uses `Helper._print_plain`

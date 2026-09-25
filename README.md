@@ -83,8 +83,12 @@ only one of them can be used at a time.
 ### Docker
 
 ```bash
-docker run --rm -t bledy/timezone-converter <timezone> [<timezone> ...]
+docker run --rm -t -e TZ=Europe/Madrid bledy/timezone-converter <timezone> [<timezone> ...]
 ```
+
+A container has no timezone of its own, so without `-e TZ` (or `--local`) the
+`LOCAL` column is UTC. See
+[Override your local timezone](#override-your-local-timezone) below.
 
 ## Features
 
@@ -149,6 +153,21 @@ inside a Docker container, where the host is usually set to UTC. Everything
 follows the override: which day is "today", where midnight falls, which hour
 `--hour` selects, and what `--difference` measures from.
 
+Without `--local`, the `TZ` environment variable is honored the same way, which
+is the usual way to give a container, a CI runner, or a Windows shell a local
+timezone:
+
+```bash
+TZ=Europe/Madrid timezone-converter new_york
+```
+
+`TZ` is read with the same timezone database the rest of the tool uses, so an
+IANA name such as `Europe/Madrid` resolves identically on every platform, and
+on minimal container images that ship no system timezone data. If `TZ` is
+unset, or holds something that is not an IANA name (such as a POSIX rule
+string like `CET-1CEST,M3.5.0,M10.5.0/3`), your machine's timezone is used.
+When both are set, `--local` wins.
+
 ### Machine-readable output
 
 Using `--format json`, a comparison is printed as JSON instead of a table.
@@ -186,9 +205,9 @@ current hour.
 }
 ```
 
-The `zone` of the `LOCAL` column is `null` unless you set `--local`, because
-your machine's timezone is read as a plain UTC offset rather than a named
-zone.
+The `zone` of the `LOCAL` column is `null` unless you set `--local` or `TZ`,
+because your machine's timezone is read as a plain UTC offset rather than a
+named zone.
 
 ### Search for a timezone
 

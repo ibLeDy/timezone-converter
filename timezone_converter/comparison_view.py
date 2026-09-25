@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 from rich.table import Table
 
 from timezone_converter.helper import Helper
+from timezone_converter.helper import local_timezone
 
 
 def _to_local(instant: datetime) -> datetime:
@@ -88,6 +89,13 @@ class ComparisonView(Helper):
         self.local_zone: Optional[tzinfo] = None
         if local is not None:
             self.local_zone = ZoneInfo(self._get_timezone_name(local))
+        else:
+            # Without --local, ``TZ`` names the local zone when it holds an IANA
+            # name, which is how a container is usually told its timezone.
+            # Resolving it here, rather than leaving it to the C library behind
+            # ``astimezone``, keeps it working on images without the OS
+            # timezone database; see ``helper.local_timezone``.
+            self.local_zone = local_timezone()
 
         # Local midnight of the day being compared, in whichever zone counts
         # as local. For the machine's own zone, ``astimezone`` on a naive

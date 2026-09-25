@@ -1,6 +1,8 @@
 from zoneinfo import available_timezones
+from zoneinfo import ZoneInfo
 
 from timezone_converter.helper import Helper
+from timezone_converter.helper import local_timezone
 
 
 def test_translations_map_segment_to_canonical():
@@ -91,3 +93,42 @@ def test_shadowed_zone_reachable_by_full_path():
     assert short in ('Asia/Istanbul', 'Europe/Istanbul')
     assert Helper.resolve_timezone('asia/istanbul') == 'Asia/Istanbul'
     assert Helper.resolve_timezone('europe/istanbul') == 'Europe/Istanbul'
+
+
+def test_local_timezone_is_none_when_tz_is_unset(monkeypatch):
+    monkeypatch.delenv('TZ', raising=False)
+    assert local_timezone() is None
+
+
+def test_local_timezone_is_none_when_tz_is_blank(monkeypatch):
+    monkeypatch.setenv('TZ', '   ')
+    assert local_timezone() is None
+
+
+def test_local_timezone_resolves_an_iana_name(monkeypatch):
+    monkeypatch.setenv('TZ', 'Europe/Madrid')
+    assert local_timezone() == ZoneInfo('Europe/Madrid')
+
+
+def test_local_timezone_accepts_the_posix_leading_colon(monkeypatch):
+    # POSIX allows ``TZ=:Europe/Madrid``; the colon is not part of the name.
+    monkeypatch.setenv('TZ', ':Europe/Madrid')
+    assert local_timezone() == ZoneInfo('Europe/Madrid')
+
+
+def test_local_timezone_falls_back_when_tz_is_not_an_iana_name(monkeypatch):
+    monkeypatch.setenv('TZ', 'Totally/Bogus')
+    assert local_timezone() is None
+
+
+def test_local_timezone_falls_back_for_posix_rule_strings(monkeypatch):
+    # The C library understands these and zoneinfo does not, so falling back
+    # to the platform's own local timezone is the correct answer, not an error.
+    monkeypatch.setenv('TZ', 'CET-1CEST,M3.5.0,M10.5.0/3')
+    assert local_timezone() is None
+
+
+def test_local_timezone_falls_back_for_paths(monkeypatch):
+    # zoneinfo rejects absolute paths with ValueError rather than KeyError.
+    monkeypatch.setenv('TZ', '/etc/localtime')
+    assert local_timezone() is None
