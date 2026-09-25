@@ -2,7 +2,7 @@ FROM python:3.13-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1
 
-LABEL maintainer="deejaynof@gmail.com"
+LABEL maintainer="iago@iagoalonso.xyz"
 
 RUN : \
     && groupadd --gid 1001 timezone-converter \
