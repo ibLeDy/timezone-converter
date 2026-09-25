@@ -9,6 +9,30 @@ on:
       - main
 
 jobs:
+  # The image used to be built only by deployment.yml, after a GitHub Release
+  # had been published, so a broken Dockerfile or base image stopped a release
+  # halfway. Build and smoke test it here first, with the same script.
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: timezone-converter:ci
+
+      - name: Smoke test the image
+        run: scripts/smoke_test_image.sh timezone-converter:ci
+
   linux:
     runs-on: ubuntu-latest
     strategy:

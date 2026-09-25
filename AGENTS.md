@@ -62,8 +62,10 @@ integer exit codes.
 requests targeting `main`. It no longer triggers on `develop`: that branch
 is fully merged into `main` and has had no unique commits since January
 2025, so the trigger only ever produced duplicate runs. Restore it in
-`integration.yml` if `develop` is ever revived.
+`integration.yml` if `develop` is ever revived. It also builds the Docker
+image and runs `scripts/smoke_test_image.sh` against it, the same script
+`deployment.yml` runs before pushing an image.
 
 `deployment.yml` runs on a published release; see `RELEASE.md` for its job
-order. Dependabot tracks GitHub Actions weekly and pip monthly, and
-pre-commit.ci opens its own monthly hook autoupdate.
+order. Dependabot tracks GitHub Actions weekly, and pip and the Docker base
+image monthly; pre-commit.ci opens its own monthly hook autoupdate.
