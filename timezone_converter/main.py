@@ -11,6 +11,7 @@ from typing import Union
 from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.comparison_view import CURRENT_HOUR
 from timezone_converter.constants import distribution_version
+from timezone_converter.helper import Helper
 from timezone_converter.list_view import ListView
 from timezone_converter.search_view import SearchView
 
@@ -210,6 +211,39 @@ def _validate_modes(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
 
 
+def _check_comparison_flags(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> None:
+    # These flags only modify a comparison. With no timezone and no other mode
+    # the program has nothing to run, and printing the help with exit code 0
+    # claimed a success it did not have, so that is a usage error. Next to
+    # --list or --search the output is still exactly what was asked for, so
+    # the unused flag only earns a warning; that also keeps an alias which
+    # bakes in, say, --zone working for --list.
+    given = {
+        '--zone': args.zone,
+        '--hour': args.hour is not None,
+        '--date': args.date is not None,
+        '--local': args.local is not None,
+        '--order': args.order,
+        '--difference': args.difference,
+    }
+    unused = [flag for flag, used in given.items() if used]
+    if not unused or args.timezone:
+        return
+
+    flags = ' and '.join(unused)
+    applies = 'only applies' if len(unused) == 1 else 'only apply'
+    if args.list is None and args.search is None:
+        parser.error(
+            f'{flags} {applies} to a comparison, give at least one timezone',
+        )
+    Helper._print_error_with_rich(
+        f'warning: {flags} {applies} to a comparison, ignored',
+    )
+
+
 def main() -> int:
     """Parse command-line arguments and dispatch to the requested view.
 
@@ -222,6 +256,7 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     _validate_modes(parser, args)
+    _check_comparison_flags(parser, args)
     # ``is not None`` rather than truthiness: an empty value is still an
     # explicit request for that mode (``--list ''`` selects no letters), and
     # falling through to the help text would hide it.
