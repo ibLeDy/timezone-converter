@@ -6,16 +6,18 @@ from typing import Any
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 from timezone_converter.comparison_view import ComparisonView
 from timezone_converter.comparison_view import CURRENT_HOUR
 from timezone_converter.constants import distribution_version
+from timezone_converter.helper import Helper
 from timezone_converter.list_view import ListView
 from timezone_converter.search_view import SearchView
 
 
-def _hour_value(argument: str) -> int:
+def _parse_hour(argument: str, flag: str) -> int:
     # ``ArgumentTypeError`` is the exception argparse documents for ``type``
     # callables: it turns it into a ``prog: error: argument --hour: ...``
     # message and exit code 2, instead of the bare ``invalid _hour_value
@@ -28,9 +30,66 @@ def _hour_value(argument: str) -> int:
         )
     if hour not in range(24):
         raise argparse.ArgumentTypeError(
-            'Value for --hour must be between 00 and 23',
+            f'Value for {flag} must be between 00 and 23',
         )
     return hour
+
+
+def _hour_value(argument: str) -> int:
+    return _parse_hour(argument, '--hour')
+
+
+def _highlight_value(argument: str) -> Tuple[int, Optional[str]]:
+    # ``17`` is 17:00 in the local column, ``17@tokyo`` the row where the
+    # Tokyo column reads 17h. The zone is resolved by the view, which knows
+    # the columns and gives an unknown name the usual suggestions.
+    hour_text, at, zone = argument.partition('@')
+    hour = _parse_hour(hour_text, '--highlight')
+    if at and not zone:
+        raise argparse.ArgumentTypeError(
+            f'{argument !r} names no timezone after @',
+        )
+    return hour, zone or None
+
+
+_MAX_SPAN = 7 * 24
+
+
+def _span_value(argument: str) -> int:
+    try:
+        span = int(argument)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f'{argument !r} is not a whole number of hours',
+        )
+    if abs(span) > _MAX_SPAN:
+        raise argparse.ArgumentTypeError(
+            f'Value for --span must be between -{_MAX_SPAN} and {_MAX_SPAN}',
+        )
+    if span == 0:
+        raise argparse.ArgumentTypeError(
+            'Value for --span is a number of hours to show, so it cannot be 0',
+        )
+    return span
+
+
+def _range_value(argument: str) -> Tuple[int, int, Optional[str]]:
+    # ``10-22`` is 10:00 through 22:00 local, ``10-22@tokyo`` the same read in
+    # the Tokyo column. The zone is split off first, since zone names such as
+    # Etc/GMT-5 or Port-au-Prince contain dashes of their own.
+    hours, at, zone = argument.partition('@')
+    start_text, dash, end_text = hours.partition('-')
+    if not dash:
+        raise argparse.ArgumentTypeError(
+            f'{argument !r} is not a range of hours such as 10-22',
+        )
+    if at and not zone:
+        raise argparse.ArgumentTypeError(
+            f'{argument !r} names no timezone after @',
+        )
+    start = _parse_hour(start_text, '--range')
+    end = _parse_hour(end_text, '--range')
+    return start, end, zone or None
 
 
 def _date_value(argument: str) -> date:
@@ -94,8 +153,9 @@ def build_parser() -> argparse.ArgumentParser:
     -------
     argparse.ArgumentParser
         Parser configured with the ``timezone``, ``--list``, ``--version``,
-        ``--zone``, ``--hour``, ``--search``, ``--date``, ``--local``,
-        ``--format``, ``--order``, and ``--difference`` arguments.
+        ``--zone``, ``--hour``, ``--highlight``, ``--span``, ``--range``,
+        ``--search``, ``--date``, ``--local``, ``--format``, ``--order``, and
+        ``--difference`` arguments.
     """
     parser = argparse.ArgumentParser(
         prog='timezone-converter',
@@ -137,6 +197,37 @@ def build_parser() -> argparse.ArgumentParser:
         metavar='HOUR',
         dest='hour',
         help='show a single hour',
+    )
+    parser.add_argument(
+        '-i',
+        '--highlight',
+        type=_highlight_value,
+        metavar='HOUR[@TIMEZONE]',
+        help=(
+            'highlight this hour instead of the current one; @TIMEZONE picks '
+            'the column whose hour it is'
+        ),
+    )
+    parser.add_argument(
+        '-n',
+        '--span',
+        type=_span_value,
+        metavar='[+|-]HOURS',
+        help=(
+            'show HOURS hours starting at the highlighted hour, or ending at '
+            'it if negative'
+        ),
+    )
+    parser.add_argument(
+        '-r',
+        '--range',
+        type=_range_value,
+        dest='hour_range',
+        metavar='FROM-TO[@TIMEZONE]',
+        help=(
+            'show the hours from FROM through TO, e.g. 10-22; @TIMEZONE reads '
+            'them in that column'
+        ),
     )
     parser.add_argument(
         '-S',
@@ -210,6 +301,67 @@ def _validate_modes(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
 
 
+def _check_single_hour(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> None:
+    # --hour already narrows the table to one row, so there is nothing left to
+    # highlight within it, span out from or bound with a range.
+    others = [
+        flag
+        for flag, value in (
+            ('--highlight', args.highlight),
+            ('--span', args.span),
+            ('--range', args.hour_range),
+        )
+        if value is not None
+    ]
+    if args.hour is not None and others:
+        parser.error(
+            f'--hour shows a single hour, so it cannot be combined with '
+            f'{" or ".join(others)}',
+        )
+    # Both choose which hours to show, so only one of them can decide.
+    if args.span is not None and args.hour_range is not None:
+        parser.error('--span and --range both choose the hours shown, pick one')
+
+
+def _check_comparison_flags(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> None:
+    # These flags only modify a comparison. With no timezone and no other mode
+    # the program has nothing to run, and printing the help with exit code 0
+    # claimed a success it did not have, so that is a usage error. Next to
+    # --list or --search the output is still exactly what was asked for, so
+    # the unused flag only earns a warning; that also keeps an alias which
+    # bakes in, say, --zone working for --list.
+    given = {
+        '--zone': args.zone,
+        '--hour': args.hour is not None,
+        '--highlight': args.highlight is not None,
+        '--span': args.span is not None,
+        '--range': args.hour_range is not None,
+        '--date': args.date is not None,
+        '--local': args.local is not None,
+        '--order': args.order,
+        '--difference': args.difference,
+    }
+    unused = [flag for flag, used in given.items() if used]
+    if not unused or args.timezone:
+        return
+
+    flags = ' and '.join(unused)
+    applies = 'only applies' if len(unused) == 1 else 'only apply'
+    if args.list is None and args.search is None:
+        parser.error(
+            f'{flags} {applies} to a comparison, give at least one timezone',
+        )
+    Helper._print_error_with_rich(
+        f'warning: {flags} {applies} to a comparison, ignored',
+    )
+
+
 def main() -> int:
     """Parse command-line arguments and dispatch to the requested view.
 
@@ -222,6 +374,8 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     _validate_modes(parser, args)
+    _check_comparison_flags(parser, args)
+    _check_single_hour(parser, args)
     # ``is not None`` rather than truthiness: an empty value is still an
     # explicit request for that mode (``--list ''`` selects no letters), and
     # falling through to the help text would hide it.
@@ -239,6 +393,9 @@ def main() -> int:
             args.date,
             args.local,
             args.output_format,
+            args.highlight,
+            args.span,
+            args.hour_range,
         ).print_table()
     else:
         parser.print_help()
