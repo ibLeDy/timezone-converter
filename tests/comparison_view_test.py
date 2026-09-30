@@ -21,6 +21,8 @@ def _make_view(
     day=None,
     local=None,
     output_format='table',
+    highlight=None,
+    span=None,
 ):
     return ComparisonView(
         list(timezones),
@@ -31,6 +33,8 @@ def _make_view(
         day,
         local,
         output_format,
+        highlight,
+        span,
     )
 
 
@@ -847,3 +851,170 @@ def test_current_hour_is_the_machine_hour_without_an_override(
     _freeze_now(monkeypatch, _TEN_THIRTY_FOUR_UTC)
     local_timezone('America/New_York')  # EDT, UTC-4
     assert _make_view(['new_york'], hour=CURRENT_HOUR).hour == 6
+
+
+def _local_rows(view, day, zone):
+    # (local cell, highlighted?) for every row of the table built on ``day``.
+    year, month, day_of_month = day
+    view.base_instant = datetime(year, month, day_of_month, tzinfo=zone)
+    table = view._build_table()
+    return [
+        (cell, row.style == 'blue')
+        for cell, row in zip(table.columns[0]._cells, table.rows)
+    ]
+
+
+def _blue(rows):
+    return [cell for cell, highlighted in rows if highlighted]
+
+
+def test_highlight_marks_the_chosen_local_hour_instead_of_the_current(
+    local_timezone,
+):
+    # The whole day is still shown; only which row is blue changes.
+    zone = local_timezone('America/New_York')
+    rows = _local_rows(_make_view(['tokyo'], highlight=(17, None)), (2026, 6, 1), zone)
+    assert len(rows) == 24
+    assert _blue(rows) == ['2026-06-01 17:00']
+
+
+def test_highlight_reads_the_hour_in_another_column(local_timezone):
+    # 17:00 in Tokyo (JST, UTC+9) is 04:00 in New York (EDT, UTC-4).
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(17, 'tokyo'))
+    assert _blue(_local_rows(view, (2026, 6, 1), zone)) == ['2026-06-01 04:00']
+
+
+def test_highlight_in_a_half_hour_zone_uses_the_hour_it_shows(local_timezone):
+    # Kolkata is UTC+5:30, so its column never reads 17:00; the 17h row is the
+    # one reading 17:30, which is 08:00 in New York.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['kolkata'], highlight=(17, 'kolkata'))
+    view.base_instant = datetime(2026, 6, 1, tzinfo=zone)
+    table = view._build_table()
+    blue = [i for i, row in enumerate(table.rows) if row.style == 'blue']
+    assert [list(table.columns[1]._cells)[i] for i in blue] == ['2026-06-01 17:30']
+
+
+def test_highlight_zone_must_be_one_of_the_columns(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        _make_view(['tokyo'], highlight=(17, 'london'))
+    assert exit_info.value.code == 1
+    assert 'not one of the compared timezones' in capsys.readouterr().err
+
+
+def test_highlight_zone_may_be_the_local_override():
+    view = _make_view(['tokyo'], local='madrid', highlight=(17, 'madrid'))
+    assert view.highlight_zone is None
+
+
+def test_unknown_highlight_zone_exits():
+    with pytest.raises(SystemExit):
+        _make_view(['tokyo'], highlight=(17, 'nowherezz'))
+
+
+def test_span_starts_at_the_highlighted_hour(local_timezone):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(17, None), span=3)
+    assert _local_rows(view, (2026, 6, 1), zone) == [
+        ('2026-06-01 17:00', True),
+        ('2026-06-01 18:00', False),
+        ('2026-06-01 19:00', False),
+        ('2026-06-01 20:00', False),
+    ]
+
+
+def test_negative_span_ends_at_the_highlighted_hour(local_timezone):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(17, None), span=-3)
+    assert _local_rows(view, (2026, 6, 1), zone) == [
+        ('2026-06-01 14:00', False),
+        ('2026-06-01 15:00', False),
+        ('2026-06-01 16:00', False),
+        ('2026-06-01 17:00', True),
+    ]
+
+
+def test_span_runs_past_midnight_into_the_next_day(local_timezone):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(22, None), span=3)
+    assert [cell for cell, _ in _local_rows(view, (2026, 6, 1), zone)] == [
+        '2026-06-01 22:00',
+        '2026-06-01 23:00',
+        '2026-06-02 00:00',
+        '2026-06-02 01:00',
+    ]
+
+
+def test_span_without_highlight_anchors_on_the_current_hour(monkeypatch):
+    # 10:34 UTC is 00:34 the next day in Kiritimati (UTC+14).
+    _freeze_now(monkeypatch, _TEN_THIRTY_FOUR_UTC)
+    view = _make_view(['new_york'], local='kiritimati', span=2)
+    table = view._build_table()
+    assert list(table.columns[0]._cells) == [
+        '2026-09-26 00:00',
+        '2026-09-26 01:00',
+        '2026-09-26 02:00',
+    ]
+    assert [row.style for row in table.rows] == ['blue', None, None]
+
+
+def test_highlight_on_a_fall_back_day_marks_both_repeats(local_timezone):
+    # 01:00 happens twice on this date; both are that hour.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(1, None))
+    assert _blue(_local_rows(view, (2026, 11, 1), zone)) == [
+        '2026-11-01 01:00',
+        '2026-11-01 01:00',
+    ]
+
+
+@pytest.mark.parametrize('span', (None, 2))
+def test_highlight_of_an_hour_skipped_by_spring_forward_exits(
+    local_timezone,
+    capsys,
+    span,
+):
+    # 02:00 never happens on this date: an unhighlighted table, or a window
+    # anchored on nothing, would be misleading.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(2, None), span=span)
+    with pytest.raises(SystemExit) as exit_info:
+        _local_rows(view, (2026, 3, 8), zone)
+    assert exit_info.value.code == 1
+    assert 'never falls on 2026-03-08' in capsys.readouterr().err
+
+
+def test_span_across_spring_forward_steps_real_hours(local_timezone):
+    # Four real hours after midnight skip the missing 02:00.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(0, None), span=4)
+    assert [cell for cell, _ in _local_rows(view, (2026, 3, 8), zone)] == [
+        '2026-03-08 00:00',
+        '2026-03-08 01:00',
+        '2026-03-08 03:00',
+        '2026-03-08 04:00',
+        '2026-03-08 05:00',
+    ]
+
+
+def test_span_across_fall_back_steps_real_hours(local_timezone):
+    # ...and live through the repeated 01:00 twice.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(0, None), span=3)
+    assert [cell for cell, _ in _local_rows(view, (2026, 11, 1), zone)] == [
+        '2026-11-01 00:00',
+        '2026-11-01 01:00',
+        '2026-11-01 01:00',
+        '2026-11-01 02:00',
+    ]
+
+
+def test_json_marks_the_highlighted_row(local_timezone):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(17, None), output_format='json')
+    view.base_instant = datetime(2026, 6, 1, tzinfo=zone)
+    rows = view._build_payload()['rows']
+    highlighted = [row['times'][0] for row in rows if row['highlighted']]
+    assert highlighted == ['2026-06-01T17:00:00-04:00']
+    assert all('current' in row for row in rows)

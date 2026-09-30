@@ -8,8 +8,10 @@ import pytest
 from timezone_converter import main as main_module
 from timezone_converter.comparison_view import CURRENT_HOUR
 from timezone_converter.main import _date_value
+from timezone_converter.main import _highlight_value
 from timezone_converter.main import _hour_value
 from timezone_converter.main import _list_letter
+from timezone_converter.main import _span_value
 from timezone_converter.main import build_parser
 from timezone_converter.main import main
 
@@ -328,6 +330,8 @@ def test_table_format_stays_accepted_without_a_comparison(monkeypatch):
         (['--local', 'madrid'], '--local'),
         (['--order'], '--order'),
         (['--difference'], '--difference'),
+        (['--highlight', '17'], '--highlight'),
+        (['--span', '3'], '--span'),
     ),
 )
 def test_comparison_flag_with_nothing_to_compare_exits_two(
@@ -398,3 +402,68 @@ def test_modifier_flags_are_not_treated_as_a_second_mode(monkeypatch):
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
     assert recorded['called'] == 'ComparisonView'
+
+
+@pytest.mark.parametrize(
+    ('value', 'parsed'),
+    (
+        ('17', (17, None)),
+        ('0@tokyo', (0, 'tokyo')),
+        ('9@America/New_York', (9, 'America/New_York')),
+    ),
+)
+def test_highlight_value_parses_an_hour_and_an_optional_zone(value, parsed):
+    assert _highlight_value(value) == parsed
+
+
+@pytest.mark.parametrize(
+    ('value', 'message'),
+    (
+        ('24', 'Value for --highlight must be between 00 and 23'),
+        ('five@tokyo', "'five' is not a whole number of hours"),
+        ('17@', "'17@' names no timezone after @"),
+    ),
+)
+def test_highlight_value_rejects_bad_input(value, message):
+    with pytest.raises(argparse.ArgumentTypeError, match=re.escape(message)):
+        _highlight_value(value)
+
+
+@pytest.mark.parametrize('value', ('0', '8', '-8', '168', '-168'))
+def test_span_value_accepts_up_to_a_week_either_way(value):
+    assert _span_value(value) == int(value)
+
+
+@pytest.mark.parametrize('value', ('169', '-169', 'eight'))
+def test_span_value_rejects_bad_input(value):
+    with pytest.raises(argparse.ArgumentTypeError):
+        _span_value(value)
+
+
+def test_negative_span_parses_as_a_value_not_an_option():
+    assert build_parser().parse_args(['tokyo', '--span', '-8']).span == -8
+
+
+@pytest.mark.parametrize(
+    'argv',
+    (
+        ['tijuana', '--hour', '9', '--highlight', '17'],
+        ['tijuana', '--hour', '--span', '3'],
+    ),
+)
+def test_hour_cannot_be_combined_with_highlight_or_span(monkeypatch, capsys, argv):
+    monkeypatch.setattr('sys.argv', ['tz', *argv])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    assert exit_info.value.code == 2
+    assert '--hour shows a single hour' in capsys.readouterr().err
+
+
+def test_highlight_and_span_reach_the_comparison(monkeypatch):
+    monkeypatch.setattr(
+        'sys.argv',
+        ['tz', 'tokyo', '--highlight', '17@tokyo', '--span', '-3'],
+    )
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][-2:] == ((17, 'tokyo'), -3)

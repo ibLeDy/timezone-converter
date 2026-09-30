@@ -9,6 +9,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from zoneinfo import ZoneInfo
 
 from rich.table import Table
@@ -50,6 +51,8 @@ class ComparisonView(Helper):
         day: Optional[date] = None,
         local: Optional[str] = None,
         output_format: str = 'table',
+        highlight: Optional[Tuple[int, Optional[str]]] = None,
+        span: Optional[int] = None,
     ) -> None:
         """Resolve the requested timezones and prepare the comparison state.
 
@@ -80,11 +83,21 @@ class ComparisonView(Helper):
         output_format : str
             ``'table'`` for the Rich table, or ``'json'`` for a
             machine-readable payload on stdout.
+        highlight : Optional[Tuple[int, Optional[str]]]
+            An hour (0-23) to highlight instead of the current one, and the
+            timezone whose hour it is: ``None`` for the local column,
+            otherwise one of `timezones` (or `local`).
+        span : Optional[int]
+            If given, show only the highlighted hour and this many hours
+            after it, or before it if negative. The highlighted hour defaults
+            to the current one.
 
         Raises
         ------
         SystemExit
-            If a timezone name in `timezones` or `local` cannot be resolved.
+            If a timezone name in `timezones`, `local` or `highlight` cannot
+            be resolved, if the `highlight` timezone is not one of the
+            compared ones, or if its hour never falls on the local day.
         """
         self.zone = zone
         self.hour = hour
@@ -135,6 +148,38 @@ class ComparisonView(Helper):
 
         if order:
             self._sort_timezone_display()
+
+        # The hour to highlight, and the column it is read in (``None`` is the
+        # local column). Without --highlight it stays ``None`` and the current
+        # hour is highlighted, except under --span, which needs an hour to
+        # anchor on and takes the current one, like a bare --hour does.
+        self.span = span
+        self.highlight_hour: Optional[int] = None
+        self.highlight_zone: Optional[tzinfo] = None
+        if highlight is not None:
+            self.highlight_hour, highlight_name = highlight
+            if highlight_name is not None:
+                self.highlight_zone = self._highlight_column(highlight_name)
+        elif span is not None:
+            now = datetime.now(datetime_timezone.utc)
+            self.highlight_hour = self._to_local(now).hour
+
+    def _highlight_column(self, name: str) -> Optional[tzinfo]:
+        # ``17@tokyo`` reads 17h in the Tokyo column, so Tokyo has to be one.
+        # ``resolve_timezone`` first, so a name already given as a column
+        # does not print its ambiguity warning a second time; an unknown
+        # name still gets the usual error and suggestions.
+        resolved = self.resolve_timezone(name) or self._get_timezone_name(name)
+        if self.local_zone is not None and str(self.local_zone) == resolved:
+            return None
+        for zone in self.zones:
+            if zone is not None and str(zone) == resolved:
+                return zone
+        self._print_error_with_rich(
+            f'error: {name!r} is not one of the compared timezones; add it as '
+            'a timezone argument to highlight its hour',
+        )
+        raise SystemExit(1)
 
     def _today(self) -> date:
         # "Today" is a local notion, so an overridden local zone decides it
@@ -254,6 +299,46 @@ class ComparisonView(Helper):
             instant = base_utc + timedelta(hours=hour)
         return instants
 
+    def _is_highlighted(self, instant: datetime, now: datetime) -> bool:
+        # The row that starts at ``instant`` is highlighted when it contains
+        # ``now``, or with --highlight when the chosen column reads the chosen
+        # hour. Reading the hour off the rendered time, rather than matching a
+        # whole hour, also covers zones on a half or quarter hour: in
+        # Asia/Kolkata the 17h row reads 17:30.
+        if self.highlight_hour is None:
+            return instant <= now < instant + timedelta(hours=1)
+        rendered = self._convert(self.highlight_zone, instant)
+        return rendered.hour == self.highlight_hour
+
+    def _missing_highlight(self) -> SystemExit:
+        # Only a DST transition can make an hour miss a local day, whose 23 to
+        # 25 real hours otherwise pass through every hour of every zone.
+        where = (
+            'in your local timezone'
+            if self.highlight_zone is None
+            else f'in {self.highlight_zone}'
+        )
+        self._print_error_with_rich(
+            f'error: {self.highlight_hour:02d}:00 {where} never falls on '
+            f'{self._to_local(self.base_instant).date()} in your local '
+            'timezone, a clock change skips over it',
+        )
+        return SystemExit(1)
+
+    def _span_instants(self, instants: List[datetime], span: int) -> List[datetime]:
+        # Anchor on the first highlighted row of the local day, then step real
+        # hours from it, so a window across a DST change shows the hours that
+        # actually happen. A fall-back day repeats an hour; the first one wins.
+        now = datetime.now().astimezone()
+        anchors = [
+            instant for instant in instants if self._is_highlighted(instant, now)
+        ]
+        if not anchors:
+            raise self._missing_highlight()
+        step = 1 if span >= 0 else -1
+        offsets = sorted(range(0, span + step, step))
+        return [anchors[0] + timedelta(hours=offset) for offset in offsets]
+
     def _selected_instants(self) -> List[datetime]:
         # ``--hour N`` means "the local wall-clock hour N", which is not the
         # same as "N real hours after local midnight". On a spring-forward day
@@ -262,6 +347,12 @@ class ComparisonView(Helper):
         # picked out of the real local day rather than computed by arithmetic.
         instants = self._day_instants()
         if self.hour is None:
+            if self.span is not None:
+                return self._span_instants(instants, self.span)
+            if self.highlight_hour is not None:
+                now = datetime.now().astimezone()
+                if not any(self._is_highlighted(instant, now) for instant in instants):
+                    raise self._missing_highlight()
             return instants
 
         # A fall-back day repeats a local hour, so this can legitimately match
@@ -295,8 +386,7 @@ class ComparisonView(Helper):
             columns = [
                 self._convert(zone, instant).strftime(fmt) for zone in self.zones
             ]
-            highlighted = instant <= now < instant + timedelta(hours=1)
-            style = 'blue' if highlighted else None
+            style = 'blue' if self._is_highlighted(instant, now) else None
             table.add_row(*columns, style=style)
 
         return table
@@ -327,6 +417,9 @@ class ComparisonView(Helper):
             'rows': [
                 {
                     'current': instant <= now < instant + timedelta(hours=1),
+                    # What the table shows in blue: the current hour, or the
+                    # one --highlight picked.
+                    'highlighted': self._is_highlighted(instant, now),
                     # ISO-8601 with the offset, unlike the table's display
                     # format: a consumer needs the offset to know which
                     # instant a repeated fall-back hour refers to.

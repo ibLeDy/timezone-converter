@@ -52,6 +52,15 @@ error output from stdout to stderr.
   each row says whether it is the current hour. It only applies to a
   comparison: with `--list`, `--search` or no timezones it is a usage error
   (exit code `2`), never output a script could mistake for JSON.
+- `--highlight HOUR[@TIMEZONE]` / `-i`, to highlight another hour than the
+  current one while still showing the whole day: `--highlight 17` is 17:00
+  local, `--highlight 17@tokyo` the row where the Tokyo column reads 17h. In
+  JSON output, each row's `highlighted` field says which rows those are.
+- `--span HOURS` / `-n`, to show only the highlighted hour and that many hours
+  after it, or before it when negative: `--span 23` starts a day at the
+  highlighted hour, `--span -23` ends one there. Without `--highlight` it
+  starts from the current hour. Hours are counted in real time, so a span
+  across a clock change shows the hours that actually happen.
 - A warning when a short timezone name is shared by more than one zone,
   such as `istanbul`, which is both `Asia/Istanbul` and `Europe/Istanbul`.
   Which one wins is an implementation detail of the lookup table, so the

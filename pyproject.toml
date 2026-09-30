@@ -120,6 +120,9 @@ commands =
     timezone-converter tijuana
     timezone-converter tijuana --hour
     timezone-converter tijuana --hour 14
+    timezone-converter tijuana tokyo --highlight 17@tokyo
+    timezone-converter tijuana --highlight 9 --span 8
+    timezone-converter tijuana --span -3
     timezone-converter tijuana new_york
     timezone-converter tijuana new_york --hour
     timezone-converter tijuana --zone

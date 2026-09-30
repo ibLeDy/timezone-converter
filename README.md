@@ -68,6 +68,8 @@ Useful flags:
 timezone-converter tijuana new_york --zone
 timezone-converter tijuana new_york --order
 timezone-converter tijuana --hour 14
+timezone-converter tijuana tokyo --highlight 17@tokyo
+timezone-converter tijuana --highlight 9 --span 8
 timezone-converter tijuana --date 2026-03-08
 timezone-converter tijuana --local madrid
 timezone-converter tijuana --format json
@@ -79,7 +81,8 @@ timezone-converter --version
 
 `--list`, `--search`, and comparing timezones are three separate modes, so
 only one of them can be used at a time. The flags that modify a comparison
-(`--zone`, `--hour`, `--date`, `--local`, `--order`, `--difference`) need at
+(`--zone`, `--hour`, `--highlight`, `--span`, `--date`, `--local`, `--order`,
+`--difference`) need at
 least one timezone: on their own they are an error, and next to `--list` or
 `--search` they are ignored with a warning.
 
@@ -107,9 +110,32 @@ and a warning on stderr names the alternatives so you can give a full path
 instead. The warning never touches the table itself, so piping the output
 stays safe.
 
-### Current hour highlighting
+### Hour highlighting
 
-The row containing the current hour will be highlighted.
+The row containing the current hour is highlighted. Using the `--highlight`
+argument, you can highlight another hour instead, while still seeing the whole
+day: `--highlight 17` highlights 17:00 in your local timezone, and
+`--highlight 17@tokyo` highlights the row where the Tokyo column reads 17h.
+The timezone after `@` must be one of the timezones being compared.
+
+```bash
+timezone-converter madrid tokyo --highlight 17@tokyo
+```
+
+Using the `--span` argument, the table shows only the highlighted hour and
+that many hours after it, or before it when the number is negative.
+`--span 23` starts a whole day at the highlighted hour, and `--span -23` ends
+one there. Without `--highlight`, the span starts from the current hour, so
+`--span 8` shows the next eight hours. Hours are counted in real time, so a
+span across a clock change shows the hours that actually happen.
+
+```bash
+timezone-converter madrid tokyo --highlight 17@tokyo --span 23
+timezone-converter madrid --span 8
+```
+
+`--hour` already shows a single hour, so it cannot be combined with
+`--highlight` or `--span`.
 
 ### Zone abbreviations
 
@@ -183,7 +209,8 @@ Times are ISO-8601 with their UTC offset, rather than the table's display
 format, so the two instants of a repeated fall-back hour stay distinct. Each
 column reports its resolved zone, its abbreviation for the day, and its
 signed hour difference from local, and each row says whether it is the
-current hour.
+current hour and whether it is highlighted (the current hour, unless
+`--highlight` picks another).
 
 ```json
 {
@@ -205,6 +232,7 @@ current hour.
   "rows": [
     {
       "current": false,
+      "highlighted": false,
       "times": ["2026-06-01T00:00:00-04:00", "2026-06-01T13:00:00+09:00"]
     }
   ]
