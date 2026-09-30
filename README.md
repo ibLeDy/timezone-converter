@@ -70,6 +70,7 @@ timezone-converter tijuana new_york --order
 timezone-converter tijuana --hour 14
 timezone-converter tijuana tokyo --highlight 17@tokyo
 timezone-converter tijuana --highlight 9 --span 8
+timezone-converter tijuana --range 10-22
 timezone-converter tijuana --date 2026-03-08
 timezone-converter tijuana --local madrid
 timezone-converter tijuana --format json
@@ -81,8 +82,8 @@ timezone-converter --version
 
 `--list`, `--search`, and comparing timezones are three separate modes, so
 only one of them can be used at a time. The flags that modify a comparison
-(`--zone`, `--hour`, `--highlight`, `--span`, `--date`, `--local`, `--order`,
-`--difference`) need at
+(`--zone`, `--hour`, `--highlight`, `--span`, `--range`, `--date`, `--local`,
+`--order`, `--difference`) need at
 least one timezone: on their own they are an error, and next to `--list` or
 `--search` they are ignored with a warning.
 
@@ -122,20 +123,34 @@ The timezone after `@` must be one of the timezones being compared.
 timezone-converter madrid tokyo --highlight 17@tokyo
 ```
 
-Using the `--span` argument, the table shows only the highlighted hour and
-that many hours after it, or before it when the number is negative.
-`--span 23` starts a whole day at the highlighted hour, and `--span -23` ends
-one there. Without `--highlight`, the span starts from the current hour, so
-`--span 8` shows the next eight hours. Hours are counted in real time, so a
-span across a clock change shows the hours that actually happen.
+### Showing only some hours
+
+Using the `--span` argument, the table shows only that many hours, starting at
+the highlighted hour, or ending at it when the number is negative. `--span +8`
+shows the highlighted hour and the seven after it, `--span -8` the seven
+before it and the highlighted hour. Without `--highlight`, the span starts
+from the current hour, so `--span 8` shows the next eight hours.
 
 ```bash
-timezone-converter madrid tokyo --highlight 17@tokyo --span 23
-timezone-converter madrid --span 8
+timezone-converter madrid tokyo --highlight 10 --span +8
+timezone-converter madrid tokyo --highlight 17@tokyo --span -24
 ```
 
-`--hour` already shows a single hour, so it cannot be combined with
-`--highlight` or `--span`.
+Using the `--range` argument, the table shows the hours from one through
+another, both included: `--range 10-22` is 10:00 to 22:00. A range can run
+past midnight, as in `--range 22-06`, and, like `--highlight`, it can be read
+in another column: `--range 09-17@tokyo` is a working day in Tokyo.
+
+```bash
+timezone-converter madrid --range 10-22
+timezone-converter madrid tokyo --range 09-17@tokyo
+```
+
+Hours are counted in real time, so a span or range across a clock change shows
+the hours that actually happen: `--range 00-04` on the night the clocks spring
+forward shows 00, 01, 03 and 04. `--span` and `--range` both choose the hours
+shown, so only one of them can be used at a time, and `--hour`, which shows a
+single hour, cannot be combined with either, or with `--highlight`.
 
 ### Zone abbreviations
 

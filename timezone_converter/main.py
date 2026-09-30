@@ -66,7 +66,30 @@ def _span_value(argument: str) -> int:
         raise argparse.ArgumentTypeError(
             f'Value for --span must be between -{_MAX_SPAN} and {_MAX_SPAN}',
         )
+    if span == 0:
+        raise argparse.ArgumentTypeError(
+            'Value for --span is a number of hours to show, so it cannot be 0',
+        )
     return span
+
+
+def _range_value(argument: str) -> Tuple[int, int, Optional[str]]:
+    # ``10-22`` is 10:00 through 22:00 local, ``10-22@tokyo`` the same read in
+    # the Tokyo column. The zone is split off first, since zone names such as
+    # Etc/GMT-5 or Port-au-Prince contain dashes of their own.
+    hours, at, zone = argument.partition('@')
+    start_text, dash, end_text = hours.partition('-')
+    if not dash:
+        raise argparse.ArgumentTypeError(
+            f'{argument !r} is not a range of hours such as 10-22',
+        )
+    if at and not zone:
+        raise argparse.ArgumentTypeError(
+            f'{argument !r} names no timezone after @',
+        )
+    start = _parse_hour(start_text, '--range')
+    end = _parse_hour(end_text, '--range')
+    return start, end, zone or None
 
 
 def _date_value(argument: str) -> date:
@@ -130,8 +153,8 @@ def build_parser() -> argparse.ArgumentParser:
     -------
     argparse.ArgumentParser
         Parser configured with the ``timezone``, ``--list``, ``--version``,
-        ``--zone``, ``--hour``, ``--highlight``, ``--span``, ``--search``,
-        ``--date``, ``--local``, ``--format``, ``--order``, and
+        ``--zone``, ``--hour``, ``--highlight``, ``--span``, ``--range``,
+        ``--search``, ``--date``, ``--local``, ``--format``, ``--order``, and
         ``--difference`` arguments.
     """
     parser = argparse.ArgumentParser(
@@ -189,10 +212,21 @@ def build_parser() -> argparse.ArgumentParser:
         '-n',
         '--span',
         type=_span_value,
-        metavar='HOURS',
+        metavar='[+|-]HOURS',
         help=(
-            'show the highlighted hour and the next HOURS hours, or the '
-            'previous ones if negative'
+            'show HOURS hours starting at the highlighted hour, or ending at '
+            'it if negative'
+        ),
+    )
+    parser.add_argument(
+        '-r',
+        '--range',
+        type=_range_value,
+        dest='hour_range',
+        metavar='FROM-TO[@TIMEZONE]',
+        help=(
+            'show the hours from FROM through TO, e.g. 10-22; @TIMEZONE reads '
+            'them in that column'
         ),
     )
     parser.add_argument(
@@ -272,10 +306,14 @@ def _check_single_hour(
     args: argparse.Namespace,
 ) -> None:
     # --hour already narrows the table to one row, so there is nothing left to
-    # highlight within it or to span out from.
+    # highlight within it, span out from or bound with a range.
     others = [
         flag
-        for flag, value in (('--highlight', args.highlight), ('--span', args.span))
+        for flag, value in (
+            ('--highlight', args.highlight),
+            ('--span', args.span),
+            ('--range', args.hour_range),
+        )
         if value is not None
     ]
     if args.hour is not None and others:
@@ -283,6 +321,9 @@ def _check_single_hour(
             f'--hour shows a single hour, so it cannot be combined with '
             f'{" or ".join(others)}',
         )
+    # Both choose which hours to show, so only one of them can decide.
+    if args.span is not None and args.hour_range is not None:
+        parser.error('--span and --range both choose the hours shown, pick one')
 
 
 def _check_comparison_flags(
@@ -300,6 +341,7 @@ def _check_comparison_flags(
         '--hour': args.hour is not None,
         '--highlight': args.highlight is not None,
         '--span': args.span is not None,
+        '--range': args.hour_range is not None,
         '--date': args.date is not None,
         '--local': args.local is not None,
         '--order': args.order,
@@ -353,6 +395,7 @@ def main() -> int:
             args.output_format,
             args.highlight,
             args.span,
+            args.hour_range,
         ).print_table()
     else:
         parser.print_help()

@@ -123,6 +123,9 @@ commands =
     timezone-converter tijuana tokyo --highlight 17@tokyo
     timezone-converter tijuana --highlight 9 --span 8
     timezone-converter tijuana --span -3
+    timezone-converter tijuana --span +8
+    timezone-converter tijuana --range 10-22
+    timezone-converter tijuana tokyo --range 22-06@tokyo
     timezone-converter tijuana new_york
     timezone-converter tijuana new_york --hour
     timezone-converter tijuana --zone

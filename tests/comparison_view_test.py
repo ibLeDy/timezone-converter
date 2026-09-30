@@ -23,6 +23,7 @@ def _make_view(
     output_format='table',
     highlight=None,
     span=None,
+    hour_range=None,
 ):
     return ComparisonView(
         list(timezones),
@@ -35,6 +36,7 @@ def _make_view(
         output_format,
         highlight,
         span,
+        hour_range,
     )
 
 
@@ -914,8 +916,9 @@ def test_unknown_highlight_zone_exits():
 
 
 def test_span_starts_at_the_highlighted_hour(local_timezone):
+    # +4 is four hours: the highlighted one and the three after it.
     zone = local_timezone('America/New_York')
-    view = _make_view(['tokyo'], highlight=(17, None), span=3)
+    view = _make_view(['tokyo'], highlight=(17, None), span=4)
     assert _local_rows(view, (2026, 6, 1), zone) == [
         ('2026-06-01 17:00', True),
         ('2026-06-01 18:00', False),
@@ -926,7 +929,7 @@ def test_span_starts_at_the_highlighted_hour(local_timezone):
 
 def test_negative_span_ends_at_the_highlighted_hour(local_timezone):
     zone = local_timezone('America/New_York')
-    view = _make_view(['tokyo'], highlight=(17, None), span=-3)
+    view = _make_view(['tokyo'], highlight=(17, None), span=-4)
     assert _local_rows(view, (2026, 6, 1), zone) == [
         ('2026-06-01 14:00', False),
         ('2026-06-01 15:00', False),
@@ -937,7 +940,7 @@ def test_negative_span_ends_at_the_highlighted_hour(local_timezone):
 
 def test_span_runs_past_midnight_into_the_next_day(local_timezone):
     zone = local_timezone('America/New_York')
-    view = _make_view(['tokyo'], highlight=(22, None), span=3)
+    view = _make_view(['tokyo'], highlight=(22, None), span=4)
     assert [cell for cell, _ in _local_rows(view, (2026, 6, 1), zone)] == [
         '2026-06-01 22:00',
         '2026-06-01 23:00',
@@ -949,7 +952,7 @@ def test_span_runs_past_midnight_into_the_next_day(local_timezone):
 def test_span_without_highlight_anchors_on_the_current_hour(monkeypatch):
     # 10:34 UTC is 00:34 the next day in Kiritimati (UTC+14).
     _freeze_now(monkeypatch, _TEN_THIRTY_FOUR_UTC)
-    view = _make_view(['new_york'], local='kiritimati', span=2)
+    view = _make_view(['new_york'], local='kiritimati', span=3)
     table = view._build_table()
     assert list(table.columns[0]._cells) == [
         '2026-09-26 00:00',
@@ -986,9 +989,9 @@ def test_highlight_of_an_hour_skipped_by_spring_forward_exits(
 
 
 def test_span_across_spring_forward_steps_real_hours(local_timezone):
-    # Four real hours after midnight skip the missing 02:00.
+    # Five real hours from midnight skip the missing 02:00.
     zone = local_timezone('America/New_York')
-    view = _make_view(['tokyo'], highlight=(0, None), span=4)
+    view = _make_view(['tokyo'], highlight=(0, None), span=5)
     assert [cell for cell, _ in _local_rows(view, (2026, 3, 8), zone)] == [
         '2026-03-08 00:00',
         '2026-03-08 01:00',
@@ -1001,7 +1004,7 @@ def test_span_across_spring_forward_steps_real_hours(local_timezone):
 def test_span_across_fall_back_steps_real_hours(local_timezone):
     # ...and live through the repeated 01:00 twice.
     zone = local_timezone('America/New_York')
-    view = _make_view(['tokyo'], highlight=(0, None), span=3)
+    view = _make_view(['tokyo'], highlight=(0, None), span=4)
     assert [cell for cell, _ in _local_rows(view, (2026, 11, 1), zone)] == [
         '2026-11-01 00:00',
         '2026-11-01 01:00',
@@ -1018,3 +1021,105 @@ def test_json_marks_the_highlighted_row(local_timezone):
     highlighted = [row['times'][0] for row in rows if row['highlighted']]
     assert highlighted == ['2026-06-01T17:00:00-04:00']
     assert all('current' in row for row in rows)
+
+
+def _local_cells(view, day, zone):
+    return [cell for cell, _ in _local_rows(view, day, zone)]
+
+
+def test_range_shows_from_one_hour_through_another(local_timezone):
+    # 10-22 includes both ends: 10:00 through 22:00 is 13 rows.
+    zone = local_timezone('America/New_York')
+    cells = _local_cells(
+        _make_view(['tokyo'], hour_range=(10, 22, None)),
+        (2026, 6, 1),
+        zone,
+    )
+    assert len(cells) == 13
+    assert (cells[0], cells[-1]) == ('2026-06-01 10:00', '2026-06-01 22:00')
+
+
+def test_range_wraps_past_midnight(local_timezone):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], hour_range=(22, 2, None))
+    assert _local_cells(view, (2026, 6, 1), zone) == [
+        '2026-06-01 22:00',
+        '2026-06-01 23:00',
+        '2026-06-02 00:00',
+        '2026-06-02 01:00',
+        '2026-06-02 02:00',
+    ]
+
+
+def test_range_of_a_single_hour_is_one_row(local_timezone):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], hour_range=(9, 9, None))
+    assert _local_cells(view, (2026, 6, 1), zone) == ['2026-06-01 09:00']
+
+
+def test_range_reads_its_hours_in_another_column(local_timezone):
+    # 09:00-11:00 in Tokyo (UTC+9) is 20:00-22:00 the day before in New York.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], hour_range=(9, 11, 'tokyo'))
+    view.base_instant = datetime(2026, 6, 1, tzinfo=zone)
+    table = view._build_table()
+    assert list(table.columns[1]._cells) == [
+        '2026-06-02 09:00',
+        '2026-06-02 10:00',
+        '2026-06-02 11:00',
+    ]
+
+
+def test_range_zone_must_be_one_of_the_columns(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        _make_view(['tokyo'], hour_range=(9, 17, 'london'))
+    assert exit_info.value.code == 1
+    assert 'to use it with --range' in capsys.readouterr().err
+
+
+def test_range_keeps_the_highlight(local_timezone):
+    # The range only picks the rows; which one is blue is still --highlight's.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], highlight=(12, None), hour_range=(10, 14, None))
+    assert _blue(_local_rows(view, (2026, 6, 1), zone)) == ['2026-06-01 12:00']
+
+
+def test_range_across_spring_forward_ends_at_its_hour(local_timezone):
+    # 00-04 is four rows on this date, not five: 02:00 never happens.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], hour_range=(0, 4, None))
+    assert _local_cells(view, (2026, 3, 8), zone) == [
+        '2026-03-08 00:00',
+        '2026-03-08 01:00',
+        '2026-03-08 03:00',
+        '2026-03-08 04:00',
+    ]
+
+
+def test_range_across_fall_back_includes_the_repeated_hour(local_timezone):
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], hour_range=(0, 2, None))
+    assert _local_cells(view, (2026, 11, 1), zone) == [
+        '2026-11-01 00:00',
+        '2026-11-01 01:00',
+        '2026-11-01 01:00',
+        '2026-11-01 02:00',
+    ]
+
+
+@pytest.mark.parametrize('hour_range', ((2, 5, None), (0, 2, None)))
+def test_range_bound_skipped_by_spring_forward_exits(
+    local_timezone,
+    capsys,
+    hour_range,
+):
+    # Either end can be the hour the clocks skip; neither is quietly moved.
+    zone = local_timezone('America/New_York')
+    view = _make_view(['tokyo'], hour_range=hour_range)
+    with pytest.raises(SystemExit) as exit_info:
+        _local_rows(view, (2026, 3, 8), zone)
+    assert exit_info.value.code == 1
+    assert (
+        '02:00 in your local timezone never falls on 2026-03-08'
+        in capsys.readouterr().err
+    )

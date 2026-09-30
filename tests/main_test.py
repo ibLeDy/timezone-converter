@@ -11,6 +11,7 @@ from timezone_converter.main import _date_value
 from timezone_converter.main import _highlight_value
 from timezone_converter.main import _hour_value
 from timezone_converter.main import _list_letter
+from timezone_converter.main import _range_value
 from timezone_converter.main import _span_value
 from timezone_converter.main import build_parser
 from timezone_converter.main import main
@@ -332,6 +333,7 @@ def test_table_format_stays_accepted_without_a_comparison(monkeypatch):
         (['--difference'], '--difference'),
         (['--highlight', '17'], '--highlight'),
         (['--span', '3'], '--span'),
+        (['--range', '10-22'], '--range'),
     ),
 )
 def test_comparison_flag_with_nothing_to_compare_exits_two(
@@ -429,19 +431,20 @@ def test_highlight_value_rejects_bad_input(value, message):
         _highlight_value(value)
 
 
-@pytest.mark.parametrize('value', ('0', '8', '-8', '168', '-168'))
+@pytest.mark.parametrize('value', ('1', '8', '+8', '-8', '168', '-168'))
 def test_span_value_accepts_up_to_a_week_either_way(value):
     assert _span_value(value) == int(value)
 
 
-@pytest.mark.parametrize('value', ('169', '-169', 'eight'))
+@pytest.mark.parametrize('value', ('0', '169', '-169', 'eight'))
 def test_span_value_rejects_bad_input(value):
     with pytest.raises(argparse.ArgumentTypeError):
         _span_value(value)
 
 
-def test_negative_span_parses_as_a_value_not_an_option():
-    assert build_parser().parse_args(['tokyo', '--span', '-8']).span == -8
+@pytest.mark.parametrize(('value', 'span'), (('-8', -8), ('+8', 8)))
+def test_signed_span_parses_as_a_value_not_an_option(value, span):
+    assert build_parser().parse_args(['tokyo', '--span', value]).span == span
 
 
 @pytest.mark.parametrize(
@@ -449,6 +452,7 @@ def test_negative_span_parses_as_a_value_not_an_option():
     (
         ['tijuana', '--hour', '9', '--highlight', '17'],
         ['tijuana', '--hour', '--span', '3'],
+        ['tijuana', '--hour', '9', '--range', '10-22'],
     ),
 )
 def test_hour_cannot_be_combined_with_highlight_or_span(monkeypatch, capsys, argv):
@@ -466,4 +470,46 @@ def test_highlight_and_span_reach_the_comparison(monkeypatch):
     )
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
-    assert recorded['args'][-2:] == ((17, 'tokyo'), -3)
+    assert recorded['args'][-3:] == ((17, 'tokyo'), -3, None)
+
+
+def test_range_reaches_the_comparison(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['tz', 'tokyo', '--range', '22-06@tokyo'])
+    recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
+    assert main() == 0
+    assert recorded['args'][-1] == (22, 6, 'tokyo')
+
+
+def test_span_and_range_cannot_be_combined(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['tz', 'tokyo', '--span', '3', '--range', '1-4'])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    assert exit_info.value.code == 2
+    assert '--span and --range both choose the hours shown' in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ('value', 'parsed'),
+    (
+        ('10-22', (10, 22, None)),
+        ('22-06@tokyo', (22, 6, 'tokyo')),
+        ('9-17@Etc/GMT-5', (9, 17, 'Etc/GMT-5')),
+    ),
+)
+def test_range_value_parses_hours_and_an_optional_zone(value, parsed):
+    # A dash inside the zone name must not be read as the range's dash.
+    assert _range_value(value) == parsed
+
+
+@pytest.mark.parametrize(
+    ('value', 'message'),
+    (
+        ('10', "'10' is not a range of hours such as 10-22"),
+        ('10-24', 'Value for --range must be between 00 and 23'),
+        ('ten-22', "'ten' is not a whole number of hours"),
+        ('10-22@', "'10-22@' names no timezone after @"),
+    ),
+)
+def test_range_value_rejects_bad_input(value, message):
+    with pytest.raises(argparse.ArgumentTypeError, match=re.escape(message)):
+        _range_value(value)
