@@ -2,7 +2,7 @@
 
 ## Project
 
-Timezone Converter is a cross-platform Python 3.9+ Rich CLI published as
+Timezone Converter is a cross-platform Python 3.10+ Rich CLI published as
 `timezone-converter`, with entry point `timezone_converter.main:main`. Timezone
 data comes from `zoneinfo` plus `tzdata`; avoid platform-specific behavior.
 
@@ -16,7 +16,7 @@ data comes from `zoneinfo` plus `tzdata`; avoid platform-specific behavior.
   plugins interfere)
 - Required coverage: `coverage run -m pytest && coverage report` (100%)
 - All hooks: `pre-commit run --all-files`
-- Python 3.9-3.14 matrix and CLI smoke tests: `tox`
+- Python 3.10-3.14 matrix and CLI smoke tests: `tox`
 
 `tox` runs coverage-backed tests and the smoke commands in `pyproject.toml`.
 
@@ -48,9 +48,12 @@ integer exit codes.
 
 ## Compatibility and coordinated changes
 
-- Keep Python 3.9 syntax: use `typing.List`, `Optional`, and `Union`, not
-  built-in generic annotations, `X | Y`, or `match`. Package code is checked by
-  strict MyPy.
+- Python 3.10 is the floor: `X | Y` unions, built-in generics such as
+  `list[str]`, and `match` are available; 3.11+ features such as
+  `typing.Self`, `except*` and `tomllib` are not, and MyPy checks against 3.10
+  to catch them. Existing code still spells annotations with `typing.List`,
+  `Optional` and `Union`, so match the style of the file you are editing.
+  Package code is checked by strict MyPy.
 - A CLI flag change must update parser, dispatch, affected view, tests, README
   usage, and tox smoke commands together. Preserve view exit-code contracts.
 - Follow `RELEASE.md` for releases; the project version and release tag must
