@@ -318,8 +318,155 @@ def test_table_format_stays_accepted_without_a_comparison(monkeypatch):
     assert recorded['called'] == 'ListView'
 
 
+@pytest.mark.parametrize(
+    ('argv', 'flag'),
+    (
+        (['--zone'], '--zone'),
+        (['--hour'], '--hour'),
+        (['--hour', '9'], '--hour'),
+        (['--date', '2026-01-01'], '--date'),
+        (['--local', 'madrid'], '--local'),
+        (['--order'], '--order'),
+        (['--difference'], '--difference'),
+    ),
+)
+def test_comparison_flag_with_nothing_to_compare_exits_two(
+    monkeypatch,
+    capsys,
+    argv,
+    flag,
+):
+    # Regression: these printed the help text on stdout with exit code 0, so
+    # e.g. ``tzconv --hour 9 $ZONES`` with an empty $ZONES read as success.
+    monkeypatch.setattr('sys.argv', ['tz', *argv])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 2
+    assert f'{flag} only applies to a comparison' in captured.err
+    assert captured.out == ''
+
+
+def test_several_comparison_flags_are_named_together(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['tz', '--zone', '--difference'])
+    with pytest.raises(SystemExit):
+        main()
+    assert '--zone and --difference only apply to a comparison' in (
+        capsys.readouterr().err
+    )
+
+
+@pytest.mark.parametrize(
+    ('argv', 'view', 'method', 'warning'),
+    (
+        (
+            ['--list', 'tbd', '--zone'],
+            'ListView',
+            'print_columns',
+            'warning: --zone only applies to a comparison, ignored',
+        ),
+        (
+            ['--search', 'york', '--local', 'madrid', '--order'],
+            'SearchView',
+            'print_search_results',
+            'warning: --local and --order only apply to a comparison, ignored',
+        ),
+    ),
+)
+def test_comparison_flag_beside_another_mode_warns_and_runs(
+    monkeypatch,
+    capsys,
+    argv,
+    view,
+    method,
+    warning,
+):
+    # The mode still produces exactly what was asked for, so the unused flag
+    # is a warning on stderr, not an error; an alias that bakes in --zone
+    # keeps working for --list.
+    monkeypatch.setattr('sys.argv', ['tz', *argv])
+    recorded = _patch_view(monkeypatch, view, method)
+    assert main() == 0
+    assert recorded['called'] == view
+    captured = capsys.readouterr()
+    assert warning in captured.err
+    assert captured.out == ''
+
+
 def test_modifier_flags_are_not_treated_as_a_second_mode(monkeypatch):
     monkeypatch.setattr('sys.argv', ['tz', 'tijuana', '--zone', '--order'])
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
     assert recorded['called'] == 'ComparisonView'
+
+
+@pytest.mark.parametrize('output_format', ('table', 'json'))
+@pytest.mark.parametrize(
+    ('day', 'local'),
+    (('9999-12-31', 'utc'), ('0001-01-01', 'tokyo')),
+)
+def test_date_conversion_overflow_is_a_clean_error(
+    monkeypatch,
+    capsys,
+    output_format,
+    day,
+    local,
+):
+    monkeypatch.setattr(
+        'sys.argv',
+        [
+            'tz',
+            'london',
+            '--local',
+            local,
+            '--date',
+            day,
+            '--format',
+            output_format,
+        ],
+    )
+    assert main() == 1
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert '❌ ERROR' in captured.err
+    assert 'outside the supported' in captured.err
+    assert 'Traceback' not in captured.err
+
+
+@pytest.mark.parametrize('output_format', ('table', 'json'))
+def test_unknown_timezone_markup_is_literal(monkeypatch, capsys, output_format):
+    monkeypatch.setattr(
+        'sys.argv',
+        ['tz', '[/bad]', '--format', output_format],
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert captured.out == ''
+    assert "'[/bad]' is not an available timezone" in captured.err
+    assert 'Traceback' not in captured.err
+
+
+@pytest.mark.parametrize('output_format', ('table', 'json'))
+def test_skipped_calendar_date_is_an_error(monkeypatch, capsys, output_format):
+    monkeypatch.setattr(
+        'sys.argv',
+        [
+            'tz',
+            'london',
+            '--local',
+            'Pacific/Apia',
+            '--date',
+            '2011-12-30',
+            '--format',
+            output_format,
+        ],
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert captured.out == ''
+    assert '2011-12-30 does not exist' in captured.err
+    assert '❌ ERROR' in captured.err

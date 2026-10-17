@@ -1,0 +1,77 @@
+{
+  "checks": [
+    {
+      "app_id": 15368,
+      "context": "linux (3.10)"
+    },
+    {
+      "app_id": 15368,
+      "context": "linux (3.11)"
+    },
+    {
+      "app_id": 15368,
+      "context": "linux (3.12)"
+    },
+    {
+      "app_id": 15368,
+      "context": "linux (3.13)"
+    },
+    {
+      "app_id": 15368,
+      "context": "linux (3.14)"
+    },
+    {
+      "app_id": 15368,
+      "context": "macos (3.10)"
+    },
+    {
+      "app_id": 15368,
+      "context": "macos (3.11)"
+    },
+    {
+      "app_id": 15368,
+      "context": "macos (3.12)"
+    },
+    {
+      "app_id": 15368,
+      "context": "macos (3.13)"
+    },
+    {
+      "app_id": 15368,
+      "context": "macos (3.14)"
+    },
+    {
+      "app_id": 15368,
+      "context": "windows (3.10)"
+    },
+    {
+      "app_id": 15368,
+      "context": "windows (3.11)"
+    },
+    {
+      "app_id": 15368,
+      "context": "windows (3.12)"
+    },
+    {
+      "app_id": 15368,
+      "context": "windows (3.13)"
+    },
+    {
+      "app_id": 15368,
+      "context": "windows (3.14)"
+    },
+    {
+      "app_id": 15368,
+      "context": "docker (amd64)"
+    },
+    {
+      "app_id": 15368,
+      "context": "docker (arm64)"
+    },
+    {
+      "app_id": 68672,
+      "context": "pre-commit.ci - pr"
+    }
+  ],
+  "strict": true
+}
