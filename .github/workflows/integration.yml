@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   # The image used to be built only by deployment.yml, after a GitHub Release
   # had been published, so a broken Dockerfile or base image stopped a release
