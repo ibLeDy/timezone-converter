@@ -69,7 +69,7 @@
       "context": "docker (arm64)"
     },
     {
-      "app_id": -1,
+      "app_id": 68672,
       "context": "pre-commit.ci - pr"
     }
   ],

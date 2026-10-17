@@ -65,7 +65,8 @@ After approval, use this sequence, checking each PR head has not changed:
    existing 3.10-3.13 jobs, and requires the three 3.14 jobs, `docker (amd64)`,
    `docker (arm64)`, and `pre-commit.ci - pr`: 18 checks. Actions checks remain
    bound to GitHub Actions app 15368; the external pre-commit status uses
-   `app_id: -1`. `strict: true` remains enabled. This subresource leaves review,
+   `app_id: 68672`, verified as the `pre-commit-ci` GitHub App. `strict: true`
+   remains enabled. This subresource leaves review,
    signature, force-push, deletion and administrator settings untouched.
 5. Verify protection, mark #117 ready once its material gates are resolved,
    and merge it with a normal merge commit. Wait for final main's full CI.
@@ -78,6 +79,11 @@ and pass the final checks again before tagging. A preparation date is not proof
 that the release has happened.
 
 ## Create the release
+
+> [!CAUTION]
+> 🔴 DANGER — Publishing the GitHub Release starts Docker/PyPI publication
+> immediately. Obtain explicit approval for the final commit and tag before
+> this step; the PyPI version cannot be reclaimed.
 
 - Commit the release changes.
 - Obtain explicit publication approval identifying the final main SHA and
@@ -116,8 +122,9 @@ can be replaced. The cost of that ordering is that a Docker Hub outage blocks
 the PyPI publish. To release anyway, re-run the workflow once Docker Hub
 recovers.
 
-Both `docker` and `pypi` target the `release` environment because each needs
-its own credentials from it. If you add manual approval to that environment,
+Both `docker` and `pypi` target the `release` environment. Docker uses the
+Docker Hub secrets; PyPI uses the environment-bound OIDC identity, without a
+PyPI API token. If you add manual approval to that environment,
 expect to approve twice per release.
 
 Docker Hub receives these tags for non-prerelease semver releases:
