@@ -11,11 +11,10 @@ their notes.
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-09-25
+## [1.0.0] - 2026-10-17
 
-First stable release. Everything below has been sitting on `main` since
-`v0.16.1` without being published, so this is the release that actually ships
-it.
+First stable release. This section consolidates all changes since `v0.16.1`,
+including the final release preparation; none has been published before 1.0.0.
 
 **Upgrading from `0.16.1`:** 1.0.0 needs Python 3.10 or newer. If you script
 against this tool, also read every entry marked **Breaking** below: one is
@@ -117,6 +116,13 @@ error output from stdout to stderr.
   installing `0.16.1`, since it honors the package's `requires-python`.
 
 ### Fixed
+
+- Invalid timezone names containing Rich markup are printed literally on
+  stderr rather than crashing the error renderer.
+- Dates outside the representable timezone-conversion range now fail with a
+  concise error instead of an overflow traceback. A completely skipped local
+  calendar date (such as 2011-12-30 in Pacific/Apia) is an error instead of a
+  successful empty comparison. Neither failure writes partial JSON to stdout.
 
 - `--version` no longer depends on `tzdata` being installed. The version was
   resolved while building the argument parser, so a missing distribution

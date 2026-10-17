@@ -398,3 +398,75 @@ def test_modifier_flags_are_not_treated_as_a_second_mode(monkeypatch):
     recorded = _patch_view(monkeypatch, 'ComparisonView', 'print_table')
     assert main() == 0
     assert recorded['called'] == 'ComparisonView'
+
+
+@pytest.mark.parametrize('output_format', ('table', 'json'))
+@pytest.mark.parametrize(
+    ('day', 'local'),
+    (('9999-12-31', 'utc'), ('0001-01-01', 'tokyo')),
+)
+def test_date_conversion_overflow_is_a_clean_error(
+    monkeypatch,
+    capsys,
+    output_format,
+    day,
+    local,
+):
+    monkeypatch.setattr(
+        'sys.argv',
+        [
+            'tz',
+            'london',
+            '--local',
+            local,
+            '--date',
+            day,
+            '--format',
+            output_format,
+        ],
+    )
+    assert main() == 1
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert '❌ ERROR' in captured.err
+    assert 'outside the supported' in captured.err
+    assert 'Traceback' not in captured.err
+
+
+@pytest.mark.parametrize('output_format', ('table', 'json'))
+def test_unknown_timezone_markup_is_literal(monkeypatch, capsys, output_format):
+    monkeypatch.setattr(
+        'sys.argv',
+        ['tz', '[/bad]', '--format', output_format],
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert captured.out == ''
+    assert "'[/bad]' is not an available timezone" in captured.err
+    assert 'Traceback' not in captured.err
+
+
+@pytest.mark.parametrize('output_format', ('table', 'json'))
+def test_skipped_calendar_date_is_an_error(monkeypatch, capsys, output_format):
+    monkeypatch.setattr(
+        'sys.argv',
+        [
+            'tz',
+            'london',
+            '--local',
+            'Pacific/Apia',
+            '--date',
+            '2011-12-30',
+            '--format',
+            output_format,
+        ],
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    captured = capsys.readouterr()
+    assert exit_info.value.code == 1
+    assert captured.out == ''
+    assert '2011-12-30 does not exist' in captured.err
+    assert '❌ ERROR' in captured.err

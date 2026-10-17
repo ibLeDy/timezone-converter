@@ -265,16 +265,26 @@ def main() -> int:
     elif args.search is not None:
         returncode = SearchView(args.search).print_search_results()
     elif args.timezone:
-        returncode = ComparisonView(
-            args.timezone,
-            args.zone,
-            args.hour,
-            args.order,
-            args.difference,
-            args.date,
-            args.local,
-            args.output_format,
-        ).print_table()
+        try:
+            returncode = ComparisonView(
+                args.timezone,
+                args.zone,
+                args.hour,
+                args.order,
+                args.difference,
+                args.date,
+                args.local,
+                args.output_format,
+            ).print_table()
+        except OverflowError:
+            # Valid calendar dates at datetime's limits can overflow while
+            # applying UTC offsets or walking the day. Report the unsupported
+            # comparison without leaking a traceback or partial JSON output.
+            Helper._print_error_with_rich(
+                '❌ ERROR: the requested date is outside the supported '
+                'timezone conversion range',
+            )
+            returncode = 1
     else:
         parser.print_help()
 
