@@ -760,8 +760,10 @@ def test_ambiguous_short_name_resolves_via_comparison_view():
 def test_tz_environment_variable_drives_the_local_column(monkeypatch):
     # Regression: containers have no timezone of their own, so the LOCAL
     # column fell back to UTC. TZ now names the local zone directly, resolved
-    # through zoneinfo so it works without the OS timezone database.
+    # through zoneinfo so it works without the OS timezone database. The date
+    # is frozen in summer so the abbreviation does not depend on today's date.
     monkeypatch.setenv('TZ', 'Europe/Madrid')
+    _freeze_now(monkeypatch, datetime(2026, 6, 1, 12, tzinfo=datetime_timezone.utc))
     view = _make_view(['new_york'], zone=True, hour=12)
     assert view._get_headers()[0] == 'LOCAL (CEST)'
     view.base_instant = datetime(2026, 6, 1, tzinfo=ZoneInfo('Europe/Madrid'))
