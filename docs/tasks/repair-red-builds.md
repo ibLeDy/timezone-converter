@@ -1,4 +1,4 @@
-Status: In progress
+Status: Complete
 
 # Repair red integration builds
 
@@ -35,7 +35,26 @@ Leave their branches and the existing release worktree untouched.
 5. Record the remaining merge and downstream PR refresh steps. Merging or
    publishing a release is outside this repair's authorization.
 
-## Validation
+## Validation and handoff
 
-Pending current local and GitHub checks. Historical green checks on #123 are
-not used as evidence for the final repair.
+Validated on 2026-11-23 at code commit `9ba8de6`:
+
+- 156 tests pass with 100% statement and branch coverage on each local
+  interpreter: Python 3.9.6, 3.10.20, 3.11.15, 3.12.13, 3.13.14, and 3.14.6.
+- Sequential tox passes all six environments and their 23 CLI smoke commands.
+- Every configured pre-commit hook passes, including Black, Flake8, and MyPy.
+- Wheel and sdist build successfully and both pass Twine checks.
+- Integration run 45165500890 passes all 20 jobs: Linux/macOS/Windows on
+  Python 3.9-3.14, plus native amd64/arm64 Docker builds and smoke tests.
+  pre-commit.ci also passes. Linux Python 3.9 succeeds on Ubuntu 24.04.
+
+The fixes are ready for PR review. Refresh #121 and #124 by merging this
+repair branch into their existing branches, preserving both histories, then
+verify their checks and mark completed PRs ready. Use separate persistent
+`refresh-hook-builds` and `refresh-docker-builds` worktrees. These refreshes
+change neither the hook pins nor the Docker base selected by those PRs.
+
+Merge #123 into main before the two bot PRs so their diffs reduce to their
+original dependency updates. GitHub merge and release publication remain
+separate owner decisions. The existing release worktree and #117/#119
+branches were preserved.
