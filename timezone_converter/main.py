@@ -240,7 +240,7 @@ def _check_comparison_flags(
             f'{flags} {applies} to a comparison, give at least one timezone',
         )
     Helper._print_error_with_rich(
-        f'warning: {flags} {applies} to a comparison, ignored',
+        f'🟠 WARNING: {flags} {applies} to a comparison, ignored',
     )
 
 

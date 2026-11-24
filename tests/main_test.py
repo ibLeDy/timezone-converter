@@ -363,13 +363,13 @@ def test_several_comparison_flags_are_named_together(monkeypatch, capsys):
             ['--list', 'tbd', '--zone'],
             'ListView',
             'print_columns',
-            'warning: --zone only applies to a comparison, ignored',
+            '🟠 WARNING: --zone only applies to a comparison, ignored',
         ),
         (
             ['--search', 'york', '--local', 'madrid', '--order'],
             'SearchView',
             'print_search_results',
-            'warning: --local and --order only apply to a comparison, ignored',
+            '🟠 WARNING: --local and --order only apply to a comparison, ignored',
         ),
     ),
 )
