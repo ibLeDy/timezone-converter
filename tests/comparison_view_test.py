@@ -757,15 +757,25 @@ def test_ambiguous_short_name_resolves_via_comparison_view():
     assert str(view.zones[1]) in ('Asia/Istanbul', 'Europe/Istanbul')
 
 
-def test_tz_environment_variable_drives_the_local_column(monkeypatch):
+@pytest.mark.parametrize(
+    ('month', 'abbreviation'),
+    [(6, 'CEST'), (1, 'CET')],
+    ids=['summer', 'winter'],
+)
+def test_tz_environment_variable_drives_the_local_column(
+    monkeypatch,
+    month,
+    abbreviation,
+):
     # Regression: containers have no timezone of their own, so the LOCAL
     # column fell back to UTC. TZ now names the local zone directly, resolved
-    # through zoneinfo so it works without the OS timezone database.
+    # through zoneinfo so it works without the OS timezone database. Fixed
+    # summer and winter instants keep the expectations independent of today.
     monkeypatch.setenv('TZ', 'Europe/Madrid')
+    _freeze_now(monkeypatch, datetime(2026, month, 1, 12, tzinfo=datetime_timezone.utc))
     view = _make_view(['new_york'], zone=True, hour=12)
-    assert view._get_headers()[0] == 'LOCAL (CEST)'
-    view.base_instant = datetime(2026, 6, 1, tzinfo=ZoneInfo('Europe/Madrid'))
-    assert list(view._build_table().columns[0]._cells) == ['2026-06-01 12:00']
+    assert view._get_headers()[0] == f'LOCAL ({abbreviation})'
+    assert list(view._build_table().columns[0]._cells) == [f'2026-{month:02d}-01 12:00']
 
 
 def test_tz_environment_variable_sets_base_instant_to_local_midnight(monkeypatch):
