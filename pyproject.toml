@@ -24,17 +24,17 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Terminals",
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "rich>=15.0.0",
     "tzdata>=2026.2",
@@ -72,8 +72,8 @@ packages = [
 
 [tool.mypy]
 # Check against the oldest supported Python, not the one running MyPy, so a
-# 3.11+ API (typing.Self, tomllib, ...) is caught before the 3.10 CI job.
-python_version = "3.10"
+# newer API is rejected before the Python 3.11 CI job.
+python_version = "3.11"
 check_untyped_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -95,16 +95,16 @@ plugins = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py310, py311, py312, py313, py314
+envlist = py311, py312, py313, py314, py315
 isolated_build = True
 
 [gh-actions]
 python =
-    3.10: py310
     3.11: py311
     3.12: py312
     3.13: py313
     3.14: py314
+    3.15: py315
 
 [testenv]
 deps =

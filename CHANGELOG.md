@@ -11,14 +11,14 @@ their notes.
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-10-17
+## [1.0.0] - Unreleased
 
 First stable release. This section consolidates all changes since `v0.16.1`,
 including the final release preparation; none has been published before 1.0.0.
 
-**Upgrading from `0.16.1`:** 1.0.0 needs Python 3.10 or newer. If you script
+**Upgrading from `0.16.1`:** 1.0.0 needs Python 3.11 or newer. If you script
 against this tool, also read every entry marked **Breaking** below: one is
-that Python 3.9 removal, two are about `--hour`, and the rest are cases where
+the Python 3.9/3.10 removal, two are about `--hour`, and the rest are cases where
 the CLI used to succeed quietly and now reports an error, plus the move of
 error output from stdout to stderr.
 
@@ -111,9 +111,10 @@ error output from stdout to stderr.
   tool, replace `--single` with `--hour` and `-s` with `-H`; the old spelling
   is gone rather than deprecated, so it now fails with an argparse error
   instead of silently doing something else.
-- **Breaking:** Python 3.9 is no longer supported; 1.0.0 requires Python 3.10
-  or newer. 3.9 reached end of life in October 2025. On 3.9, `pip` keeps
-  installing `0.16.1`, since it honors the package's `requires-python`.
+- **Breaking:** Python 3.9 and 3.10 are no longer supported; 1.0.0 requires
+  Python 3.11 or newer. Both older versions are upstream end-of-life. On those
+  interpreters, `pip` keeps installing `0.16.1` because it honors the package's
+  `requires-python`. The full CI/tox matrix covers Python 3.11-3.15.
 
 ### Fixed
 
@@ -154,11 +155,11 @@ error output from stdout to stderr.
 
 ### Notes
 
-- Installation is unchanged on Python 3.10+: `pip install -U
+- Installation is unchanged on Python 3.11+: `pip install -U
   timezone-converter`. With Docker, pass your timezone so the `LOCAL` column
   is not UTC: `docker run --rm -t -e TZ=Europe/Madrid
   bledy/timezone-converter <timezone> [<timezone> ...]`. The image is now
-  based on Debian trixie.
+  based on Python 3.15 and Debian trixie.
 - The comparison table already spanned the real local day (23, 24, or 25
   hours) across DST changes as of `v0.16.1`; `1.0.0` extends that same
   correctness to single-hour selection.

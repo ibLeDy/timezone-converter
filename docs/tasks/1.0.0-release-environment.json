@@ -1,0 +1,11 @@
+{
+  "deployment_branch_policy": null,
+  "prevent_self_review": false,
+  "reviewers": [
+    {
+      "id": 45886240,
+      "type": "User"
+    }
+  ],
+  "wait_timer": 0
+}

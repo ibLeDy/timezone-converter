@@ -50,6 +50,9 @@ foreign ones.
 
 ## Installation
 
+Version 1.0.0 requires Python 3.11 or newer and is tested on 3.11-3.15.
+Python 3.9 and 3.10 users can continue using the published 0.16.1 release.
+
 ```bash
 pip install -U timezone-converter
 ```
