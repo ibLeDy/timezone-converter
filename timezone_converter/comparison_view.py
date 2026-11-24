@@ -120,6 +120,20 @@ class ComparisonView(Helper):
         else:
             self.base_instant = naive_midnight.replace(tzinfo=self.local_zone)
 
+        # Some timezone changes skip an entire calendar date (Apia skipped
+        # 2011-12-30). Round-trip through UTC to detect imaginary midnight;
+        # otherwise that request succeeds with an empty or wrong-date table.
+        actual_day = (
+            self.base_instant.astimezone(datetime_timezone.utc)
+            .astimezone(self.local_zone)
+            .date()
+        )
+        if actual_day != chosen_day:
+            self._print_error_with_rich(
+                f'❌ ERROR: {chosen_day} does not exist in your local timezone',
+            )
+            raise SystemExit(1)
+
         if self.hour == CURRENT_HOUR:
             now = datetime.now(datetime_timezone.utc)
             self.hour = self._to_local(now).hour

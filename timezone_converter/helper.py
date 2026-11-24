@@ -152,5 +152,6 @@ class Helper:
     @staticmethod
     def _print_error_with_rich(obj: Union[str, Columns, Table]) -> None:
         # Errors belong on stderr so a caller can redirect or pipe the real
-        # output without swallowing the reason it is empty.
-        Console(stderr=True).print(obj)
+        # output without swallowing the reason it is empty. User-supplied names
+        # must remain literal, even when they contain Rich markup syntax.
+        Console(stderr=True).print(obj, markup=False)

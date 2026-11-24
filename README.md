@@ -50,6 +50,9 @@ foreign ones.
 
 ## Installation
 
+Version 1.0.0 requires Python 3.11 or newer and is tested on 3.11-3.15.
+Python 3.9 and 3.10 users can continue using the published 0.16.1 release.
+
 ```bash
 pip install -U timezone-converter
 ```
@@ -78,7 +81,10 @@ timezone-converter --version
 ```
 
 `--list`, `--search`, and comparing timezones are three separate modes, so
-only one of them can be used at a time.
+only one of them can be used at a time. The flags that modify a comparison
+(`--zone`, `--hour`, `--date`, `--local`, `--order`, `--difference`) need at
+least one timezone: on their own they are an error, and next to `--list` or
+`--search` they are ignored with a warning.
 
 ### Docker
 
