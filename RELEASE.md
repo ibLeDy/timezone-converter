@@ -63,10 +63,11 @@ force-push/deletion controls, and administrator settings.
 2. Confirm Docker Hub publishing access for `bledy/timezone-converter` and the
    token used by GitHub's `DOCKERHUB_TOKEN`. A different local login or public
    image pull does not verify that stored token's write permission.
-3. Review `docs/tasks/1.0.0-release-environment.json`: require owner review for
-   deployment through the `release` environment. Allow self-review because this
-   is a solo-maintainer repository; leave branch-review requirements unchanged.
-   Read settings back after applying it. Existing secrets are preserved.
+3. Read the live `release` environment settings and verify the approved
+   policy recorded in `docs/tasks/1.0.0-release-environment.json`: `ibLeDy`
+   reviews deployments, with self-review allowed for this solo-maintainer
+   repository. The existing administrator bypass remains enabled. Branch-review
+   requirements, deployment branch policy and secrets are unchanged.
 4. Verify 1.0.0 is absent from GitHub and PyPI. Replace the changelog's
    `Unreleased` marker with the actual Europe/Madrid publication date in a
    reviewed commit and rerun the final checks. Do not invent a release date
@@ -105,7 +106,8 @@ corrective release requires a separate explicit decision.
 
 > [!WARNING]
 > 🟠 WARNING — Publishing access and release-review settings must be verified
-> before tagging. Keep the changelog marked Unreleased until publication prep.
+> before tagging. Administrators retain the existing review-bypass option.
+> Keep the changelog marked Unreleased until publication prep.
 
 > [!IMPORTANT]
 > 🔵 BEHAVIOR CHANGE — Python 3.11+ is required; the full CI matrix is
